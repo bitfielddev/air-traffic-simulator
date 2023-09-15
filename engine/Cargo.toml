@@ -10,3 +10,4 @@ glam = { version = "0.24.1", features = ["serde"] }
 serde = { version = "1.0.188", features = ["rc", "derive"] }
 smol_str = { version = "0.2.0", features = ["serde"] }
 eyre = "0.6.8"
+itertools = "0.11.0"

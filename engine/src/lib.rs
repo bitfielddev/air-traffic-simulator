@@ -155,124 +155,29 @@
     clippy::wildcard_dependencies
 )]
 
-use std::{cmp::Ordering, path::Path, sync::Arc};
+mod config;
+mod state;
+mod world_data;
 
-use eyre::{eyre, Result};
+use config::Config;
 use glam::{Vec2, Vec3};
-use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+use world_data::WorldData;
 
-type AirportCode = SmolStr;
-type Pos2 = Vec2;
-type Pos3 = Vec3;
-type Class = SmolStr;
-type PlaneModelId = SmolStr;
-type WaypointId = SmolStr;
+use crate::state::State;
 
-#[derive(Clone, Serialize, Deserialize)]
+pub type AirportCode = SmolStr;
+pub type FlightCode = SmolStr;
+pub type Pos2 = Vec2;
+pub type Pos3 = Vec3;
+pub type Class = SmolStr;
+pub type PlaneModelId = SmolStr;
+pub type WaypointId = SmolStr;
+pub type Timestamp = u64;
+
+#[derive(Clone)]
 pub struct Engine {
-    world: WorldData,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct WorldData {
-    classes: Arc<[Class]>,
-    airports: Arc<[Airport]>,
-    flights: Option<Arc<[Flight]>>,
-    planes: Arc<[PlaneModel]>,
-    waypoints: Arc<[Waypoint]>,
-}
-impl WorldData {
-    pub fn cmp_class(&self, c1: &Class, c2: &Class) -> Result<Ordering> {
-        let pos1 = self
-            .classes
-            .iter()
-            .position(|a| a == c1)
-            .ok_or_else(|| eyre!("No class `{c1}`"))?;
-        let pos2 = self
-            .classes
-            .iter()
-            .position(|a| a == c2)
-            .ok_or_else(|| eyre!("No class `{c2}`"))?;
-        Ok(pos1.cmp(&pos2))
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Airport {
-    name: SmolStr,
-    code: AirportCode,
-    runways: Arc<[Runway]>,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Runway {
-    start: Pos2,
-    end: Pos2,
-    altitude: f32,
-    class: Class,
-}
-impl Runway {
-    #[must_use]
-    pub fn len(&self) -> f32 {
-        (self.start - self.end).length()
-    }
-    #[must_use]
-    pub const fn start3(&self) -> Pos3 {
-        self.start.extend(self.altitude)
-    }
-    #[must_use]
-    pub const fn end3(&self) -> Pos3 {
-        self.end.extend(self.altitude)
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Flight {
-    from: AirportCode,
-    to: AirportCode,
-    plane: Arc<[PlaneModelId]>,
-}
-impl Flight {
-    pub fn from<'a>(&self, e: &'a Engine) -> Result<&'a Airport> {
-        e.world
-            .airports
-            .iter()
-            .find(|a| a.code == self.from)
-            .ok_or_else(|| eyre!("No airport `{}`", self.from))
-    }
-    pub fn to<'a>(&self, e: &'a Engine) -> Result<&'a Airport> {
-        e.world
-            .airports
-            .iter()
-            .find(|a| a.code == self.to)
-            .ok_or_else(|| eyre!("No airport `{}`", self.to))
-    }
-    pub fn plane<'a>(&self, e: &'a Engine) -> Result<Arc<[&'a PlaneModel]>> {
-        self.plane
-            .iter()
-            .map(|p| {
-                e.world
-                    .planes
-                    .iter()
-                    .find(|m| m.id == *p)
-                    .ok_or_else(|| eyre!("No plane model `{p}`"))
-            })
-            .collect::<Result<_, _>>()
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct PlaneModel {
-    id: PlaneModelId,
-    name: SmolStr,
-    manufacturer: SmolStr,
-    class: Class,
-    icon: Option<Arc<Path>>,
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Waypoint {
-    name: WaypointId,
-    pos: Pos2,
+    pub world: WorldData,
+    pub config: Config,
+    pub state: State,
 }
