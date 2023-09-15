@@ -159,6 +159,7 @@ use std::{cmp::Ordering, path::Path, sync::Arc};
 
 use eyre::{eyre, Result};
 use glam::{Vec2, Vec3};
+use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
 type AirportCode = SmolStr;
