@@ -213,13 +213,16 @@ pub struct Runway {
     class: Class,
 }
 impl Runway {
+    #[must_use]
     pub fn len(&self) -> f32 {
         (self.start - self.end).length()
     }
-    pub fn start3(&self) -> Pos3 {
+    #[must_use]
+    pub const fn start3(&self) -> Pos3 {
         self.start.extend(self.altitude)
     }
-    pub fn end3(&self) -> Pos3 {
+    #[must_use]
+    pub const fn end3(&self) -> Pos3 {
         self.end.extend(self.altitude)
     }
 }
@@ -231,21 +234,21 @@ pub struct Flight {
     plane: Arc<[PlaneModelId]>,
 }
 impl Flight {
-    pub fn from(&self, e: &Engine) -> Result<&Airport> {
+    pub fn from<'a>(&self, e: &'a Engine) -> Result<&'a Airport> {
         e.world
             .airports
             .iter()
             .find(|a| a.code == self.from)
             .ok_or_else(|| eyre!("No airport `{}`", self.from))
     }
-    pub fn to(&self, e: &Engine) -> Result<&Airport> {
+    pub fn to<'a>(&self, e: &'a Engine) -> Result<&'a Airport> {
         e.world
             .airports
             .iter()
             .find(|a| a.code == self.to)
             .ok_or_else(|| eyre!("No airport `{}`", self.to))
     }
-    pub fn plane(&self, e: &Engine) -> Result<Arc<[&PlaneModel]>> {
+    pub fn plane<'a>(&self, e: &'a Engine) -> Result<Arc<[&'a PlaneModel]>> {
         self.plane
             .iter()
             .map(|p| {
