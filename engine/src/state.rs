@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config::Config,
-    world_data::{Airport, Flight, PlaneModel, Waypoint},
+    world_data::{Airport, Flight, PlaneModel, Waypoint, WorldData},
     Pos3, Timestamp,
 };
 
@@ -16,6 +16,18 @@ use crate::{
 pub struct State {
     pub planes: Vec<Arc<Plane>>,
     pub airports: Vec<Arc<AirportControl>>,
+}
+impl State {
+    pub fn new(wd: &WorldData) -> Self {
+        Self {
+            planes: Vec::default(),
+            airports: wd
+                .airports
+                .iter()
+                .map(|a| Arc::new(AirportControl::new(Arc::clone(a))))
+                .collect(),
+        }
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
@@ -55,6 +67,14 @@ impl PlanePos {
 pub struct AirportControl {
     pub airport: Arc<Airport>,
     pub events: Arc<RwLock<VecDeque<AirportEvent>>>,
+}
+impl AirportControl {
+    pub fn new(airport: Arc<Airport>) -> Self {
+        Self {
+            airport,
+            events: Arc::new(RwLock::default()),
+        }
+    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]

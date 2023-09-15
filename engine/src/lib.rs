@@ -181,3 +181,13 @@ pub struct Engine {
     pub config: Config,
     pub state: State,
 }
+impl Engine {
+    #[must_use]
+    pub fn new(world: WorldData, config: Config) -> Self {
+        Self {
+            state: State::new(&world),
+            world,
+            config,
+        }
+    }
+}
