@@ -5,7 +5,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
+use crate::ty::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct WorldData {
@@ -107,6 +107,8 @@ pub struct PlaneModel {
     pub name: SmolStr,
     pub manufacturer: SmolStr,
     pub class: Class,
+    pub max_hor_vel: f32,
+    pub max_hor_accel: f32,
     pub icon: Option<Arc<Path>>,
 }
 

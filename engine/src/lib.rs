@@ -155,39 +155,4 @@
     clippy::wildcard_dependencies
 )]
 
-mod config;
-mod state;
-mod world_data;
-
-use config::Config;
-use glam::{Vec2, Vec3};
-use smol_str::SmolStr;
-use world_data::WorldData;
-
-use crate::state::State;
-
-pub type AirportCode = SmolStr;
-pub type FlightCode = SmolStr;
-pub type Pos2 = Vec2;
-pub type Pos3 = Vec3;
-pub type Class = SmolStr;
-pub type PlaneModelId = SmolStr;
-pub type WaypointId = SmolStr;
-pub type Timestamp = u64;
-
-#[derive(Clone)]
-pub struct Engine {
-    pub world: WorldData,
-    pub config: Config,
-    pub state: State,
-}
-impl Engine {
-    #[must_use]
-    pub fn new(world: WorldData, config: Config) -> Self {
-        Self {
-            state: State::new(&world),
-            world,
-            config,
-        }
-    }
-}
+pub mod ty;

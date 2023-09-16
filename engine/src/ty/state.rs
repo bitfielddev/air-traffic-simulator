@@ -3,11 +3,10 @@ use std::{
     sync::{Arc, RwLock},
 };
 
-use glam::Vec3;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    config::Config,
+use crate::ty::{
+    pos::PlanePos,
     world_data::{Airport, Flight, PlaneModel, Waypoint, WorldData},
     Pos3, Timestamp,
 };
@@ -48,19 +47,6 @@ pub enum Phase {
     Cruise,
     Descent,
     Landing,
-}
-
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub struct PlanePos {
-    pub coords: Pos3,
-    pub speed: Vec3,
-    pub accel: Vec3,
-}
-impl PlanePos {
-    pub fn tick(&mut self, cfg: &Config) {
-        self.speed = self.accel * cfg.tick_duration;
-        self.coords = self.speed * cfg.tick_duration;
-    }
 }
 
 #[derive(Clone, Deserialize, Serialize)]
