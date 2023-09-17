@@ -1,52 +1,62 @@
+use std::{collections::VecDeque, sync::Arc};
+
+use eyre::Result;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 
-use crate::ty::{angle::Angle, config::Config, Pos3};
+use crate::ty::{angle::Angle, config::Config, state::Plane, world_data::PlaneModel, Pos2, Pos3};
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PlanePos {
-    pub motion: Motion,
-    pub targets: PosTarget,
-    pub max_hor_vel: f32,
-    pub max_hor_accel: f32,
+    pub pos_angle: Pos3Angle,
+    pub route: Vec<(u64, Pos3Angle)>,
+    pub hor_plan: VecDeque<Pos2Angle>,
+    pub ver_plan: VecDeque<f32>,
+    pub model: Arc<PlaneModel>,
 }
 
 impl PlanePos {
-    pub fn update(&mut self, cfg: &Config) {
-        self.targets.update_plan(&self.motion, cfg);
-        self.motion.tick(cfg);
+    pub fn new(pos_angle: Pos3Angle, model: &Arc<PlaneModel>) -> Self {
+        Self {
+            pos_angle,
+            route: Vec::new(),
+            hor_plan: VecDeque::default(),
+            ver_plan: VecDeque::default(),
+            model: Arc::clone(model),
+        }
     }
-}
-
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub struct Motion {
-    pub coords: Pos3,
-    pub ang: Angle,
-    pub hor_vel: f32,
-    pub ver_vel: f32,
-    pub ang_vel: f32,
-    pub accel: f32,
-}
-
-impl Motion {
-    pub fn tick(&mut self, cfg: &Config) {
-        self.hor_vel += self.accel * cfg.tick_duration;
-        self.ang += self.ang_vel * cfg.tick_duration;
-        self.coords += (self.ang.vec() * self.hor_vel).extend(self.ver_vel) * cfg.tick_duration;
-    }
-}
-
-#[derive(Clone, Copy, Deserialize, Serialize)]
-pub struct PosTarget {
-    pub pos: Pos3,
-    pub ang: f32,
-    pub hor_vel: f32,
-    pub match_vel_when_reach_pos: bool,
-    pub plan: (),
-}
-
-impl PosTarget {
-    pub fn update_plan(&mut self, motion: &Motion, cfg: &Config) {
+    pub fn update(&mut self, cfg: &Config) {}
+    pub fn plan_to_pos2(&mut self, pos2: Pos2) -> Result<()> {
         todo!()
     }
+    pub fn plan_to_pos2angle(&mut self, pos2angle: Pos2Angle) -> Result<()> {
+        todo!()
+    }
+    pub fn plan_to_ver(&mut self, z: f32) -> Result<()> {
+        todo!()
+    }
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct Pos3Angle(pub Pos3, pub Angle);
+
+impl Pos3Angle {
+    pub fn to_2(self) -> Pos2Angle {
+        Pos2Angle(self.0.xy(), self.1)
+    }
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub struct Pos2Angle(pub Pos2, pub Angle);
+
+impl Pos2Angle {
+    pub fn to_3(self, z: f32) -> Pos3Angle {
+        Pos3Angle(self.0.extend(z), self.1)
+    }
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+pub enum HorPlanItem {
+    Straight(f32),
+    Turn(Angle),
 }
