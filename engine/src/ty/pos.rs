@@ -9,7 +9,7 @@ use crate::ty::{angle::Angle, config::Config, state::Plane, world_data::PlaneMod
 #[derive(Clone, Deserialize, Serialize)]
 pub struct PlanePos {
     pub pos_angle: Pos3Angle,
-    pub route: Vec<(u64, Pos3Angle)>,
+    pub route: Vec<(u32, Pos3Angle)>,
     pub hor_plan: VecDeque<Pos2Angle>,
     pub ver_plan: VecDeque<f32>,
     pub model: Arc<PlaneModel>,

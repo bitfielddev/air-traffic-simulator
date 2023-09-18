@@ -14,7 +14,7 @@ use crate::ty::{
 #[derive(Clone, Deserialize, Serialize)]
 pub struct State {
     pub planes: Vec<Arc<Plane>>,
-    pub airports: Vec<Arc<AirportControl>>,
+    pub airports: Arc<[Arc<AirportControl>]>,
 }
 impl State {
     pub fn new(wd: &WorldData) -> Self {
@@ -40,8 +40,23 @@ pub struct Plane {
     pub phase: Phase,
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+impl Plane {
+    pub fn new(pos: PlanePos, model: &Arc<PlaneModel>, flight: &Arc<Flight>) -> Self {
+        Self {
+            pos,
+            model: Arc::clone(&model),
+            flight: Arc::clone(&flight),
+            waypoint_route: VecDeque::new(),
+            route: Vec::new(),
+            events: Arc::new(RwLock::default()),
+            phase: Phase::default(),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
 pub enum Phase {
+    #[default]
     Takeoff,
     Climb,
     Cruise,
