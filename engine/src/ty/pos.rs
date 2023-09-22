@@ -60,3 +60,22 @@ pub enum HorPlanItem {
     Straight(f32),
     Turn(Angle),
 }
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct HorPlanner(Arc<[HorPlanItem]>);
+impl HorPlanItem {
+    pub fn plan_to_pos2(from: Pos2Angle, to: Pos2) -> Self {
+        let angle = todo!();
+        let turn = HorPlanItem::Turn(angle);
+    }
+    pub fn plan_to_pos2angle(from: Pos2Angle, to: Pos2Angle) -> Self {
+        todo!()
+    }
+    pub fn calc_positions(cfg: &Config) -> VecDeque<Pos2Angle> {
+        todo!()
+    }
+}
+
+pub fn plan_to_ver(from: f32, to: f32) -> VecDeque<f32> {
+    todo!()
+}

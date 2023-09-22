@@ -107,9 +107,17 @@ pub struct PlaneModel {
     pub name: SmolStr,
     pub manufacturer: SmolStr,
     pub class: Class,
-    pub max_hor_vel: f32,
-    pub max_hor_accel: f32,
+    pub motion: ModelMotion,
     pub icon: Option<Arc<Path>>,
+}
+
+#[derive(Clone, Copy, Serialize, Deserialize)]
+pub struct ModelMotion {
+    max_hor_vel: f32,
+    hor_accel: f32,
+    max_ver_vel: f32,
+    ver_accel: f32,
+    turning_radius: f32,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
