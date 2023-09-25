@@ -7,7 +7,7 @@ use smol_str::SmolStr;
 
 use crate::ty::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorldData {
     pub classes: Arc<[Arc<[Class]>]>,
     pub airports: Arc<[Arc<Airport>]>,
@@ -17,6 +17,7 @@ pub struct WorldData {
 }
 
 impl WorldData {
+    #[must_use]
     pub fn cmp_class(&self, c1: &Class, c2: &Class) -> Option<Ordering> {
         for class_list in &*self.classes {
             let Some(pos1) = class_list.iter().find(|a| *a == c1) else {
@@ -31,14 +32,14 @@ impl WorldData {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Airport {
     pub name: SmolStr,
     pub code: AirportCode,
     pub runways: Arc<[Runway]>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Runway {
     pub start: Pos2,
     pub end: Pos2,
@@ -61,7 +62,7 @@ impl Runway {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Flight {
     pub airline: SmolStr,
     pub code: FlightCode,
@@ -101,7 +102,7 @@ impl Flight {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PlaneModel {
     pub id: PlaneModelId,
     pub name: SmolStr,
@@ -111,16 +112,16 @@ pub struct PlaneModel {
     pub icon: Option<Arc<Path>>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub struct ModelMotion {
-    max_hor_vel: f32,
-    hor_accel: f32,
-    max_ver_vel: f32,
-    ver_accel: f32,
-    turning_radius: f32,
+    pub max_hor_vel: f32,
+    pub hor_accel: f32,
+    pub max_ver_vel: f32,
+    pub ver_accel: f32,
+    pub turning_radius: f32,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Waypoint {
     pub name: WaypointId,
     pub pos: Pos2,

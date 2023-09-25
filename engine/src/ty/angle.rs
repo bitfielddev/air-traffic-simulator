@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
     Clone,
     Copy,
     Debug,
+    PartialEq,
     Deserialize,
     Serialize,
     Add,

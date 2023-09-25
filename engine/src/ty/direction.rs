@@ -9,12 +9,32 @@ pub enum LMR {
     Middle,
     Right,
 }
+impl LMR {
+    #[must_use]
+    pub const fn rev(&self) -> Self {
+        match self {
+            Self::Left => Self::Right,
+            Self::Right => Self::Left,
+            Self::Middle => Self::Middle,
+        }
+    }
+}
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum FMB {
     Front,
     Middle,
     Back,
+}
+impl FMB {
+    #[must_use]
+    pub const fn rev(&self) -> Self {
+        match self {
+            Self::Front => Self::Back,
+            Self::Back => Self::Front,
+            Self::Middle => Self::Middle,
+        }
+    }
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
@@ -25,7 +45,7 @@ pub enum Rotation {
 
 impl Rotation {
     #[must_use]
-    pub const fn opp(&self) -> Self {
+    pub const fn rev(&self) -> Self {
         match self {
             Self::Clockwise => Self::Anticlockwise,
             Self::Anticlockwise => Self::Clockwise,
@@ -99,5 +119,27 @@ impl Direction for Type {
     #[inline]
     fn turning_rot(&self, other: Self) -> Option<Rotation> {
         self.0.turning_rot(other.0)
+    }
+}
+
+pub trait PerpRot: Copy {
+    #[must_use]
+    fn perp_rot(self, rot: Rotation) -> Self;
+    #[must_use]
+    fn perp_lmr(self, lmr: LMR) -> Self {
+        match lmr {
+            LMR::Left => self.perp_rot(Rotation::Anticlockwise),
+            LMR::Right => self.perp_rot(Rotation::Clockwise),
+            _ => panic!("Middle"),
+        }
+    }
+}
+
+impl PerpRot for Vec2 {
+    fn perp_rot(self, rot: Rotation) -> Self {
+        match rot {
+            Rotation::Anticlockwise => self.perp(),
+            Rotation::Clockwise => -self.perp(),
+        }
     }
 }

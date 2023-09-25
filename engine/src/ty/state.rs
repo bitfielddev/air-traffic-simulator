@@ -11,12 +11,13 @@ use crate::ty::{
     Pos3, Timestamp,
 };
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct State {
     pub planes: Vec<Arc<Plane>>,
     pub airports: Arc<[Arc<AirportControl>]>,
 }
 impl State {
+    #[must_use]
     pub fn new(wd: &WorldData) -> Self {
         Self {
             planes: Vec::default(),
@@ -29,7 +30,7 @@ impl State {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Plane {
     pub pos: PlanePos,
     pub model: Arc<PlaneModel>,
@@ -41,11 +42,12 @@ pub struct Plane {
 }
 
 impl Plane {
+    #[must_use]
     pub fn new(pos: PlanePos, model: &Arc<PlaneModel>, flight: &Arc<Flight>) -> Self {
         Self {
             pos,
-            model: Arc::clone(&model),
-            flight: Arc::clone(&flight),
+            model: Arc::clone(model),
+            flight: Arc::clone(flight),
             waypoint_route: VecDeque::new(),
             route: Vec::new(),
             events: Arc::new(RwLock::default()),
@@ -64,12 +66,13 @@ pub enum Phase {
     Landing,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AirportControl {
     pub airport: Arc<Airport>,
     pub events: Arc<RwLock<VecDeque<AirportEvent>>>,
 }
 impl AirportControl {
+    #[must_use]
     pub fn new(airport: Arc<Airport>) -> Self {
         Self {
             airport,
@@ -78,22 +81,22 @@ impl AirportControl {
     }
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlaneEvent {
     pub from: Arc<Airport>,
     pub payload: PlaneEventPayload,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
 pub enum PlaneEventPayload {}
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct AirportEvent {
     pub from: Arc<Plane>,
     pub payload: AirportEventPayload,
 }
 
-#[derive(Clone, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
 pub enum AirportEventPayload {}
