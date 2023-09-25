@@ -3,6 +3,7 @@ use smol_str::SmolStr;
 
 mod angle;
 pub mod config;
+pub mod direction;
 pub mod engine;
 pub mod pos;
 pub mod ray;

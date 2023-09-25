@@ -37,7 +37,7 @@ impl PlanePos {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Pos3Angle(pub Pos3, pub Angle);
 
 impl Pos3Angle {
@@ -46,7 +46,7 @@ impl Pos3Angle {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Pos2Angle(pub Pos2, pub Angle);
 
 impl Pos2Angle {
@@ -55,7 +55,7 @@ impl Pos2Angle {
     }
 }
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub enum HorPlanItem {
     Straight(f32),
     Turn(Angle),

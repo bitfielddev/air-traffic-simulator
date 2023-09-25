@@ -1,13 +1,32 @@
-use std::{
-    f32::consts::{PI, TAU},
-    ops::{Add, AddAssign, Sub, SubAssign},
-};
+use std::f32::consts::{PI, TAU};
 
-use duplicate::duplicate_item;
+use derive_more::{
+    Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
+    SubAssign,
+};
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Serialize,
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    AddAssign,
+    SubAssign,
+    MulAssign,
+    DivAssign,
+    RemAssign,
+    From,
+    Into,
+    Display,
+)]
 pub struct Angle(pub f32);
 
 impl Angle {
@@ -22,34 +41,5 @@ impl Angle {
     #[must_use]
     pub fn vec(self) -> Vec2 {
         Vec2::from_angle(self.0)
-    }
-}
-
-#[duplicate_item(
-    Trait method method2      Rhs    expr   ;
-    [Add] [add]  [add_assign] [Self] [rhs.0];
-    [Add] [add]  [add_assign] [f32]  [rhs  ];
-    [Sub] [sub]  [sub_assign] [Self] [rhs.0];
-    [Sub] [sub]  [sub_assign] [f32]  [rhs  ];
-)]
-impl Trait<Rhs> for Angle {
-    type Output = Self;
-    fn method(mut self, rhs: Rhs) -> Self::Output {
-        self.0.method2(expr);
-        self.check();
-        self
-    }
-}
-
-#[duplicate_item(
-    Trait       method       method2 Rhs   ;
-    [AddAssign] [add_assign] [add]   [Self];
-    [AddAssign] [add_assign] [add]   [f32 ];
-    [SubAssign] [sub_assign] [sub]   [Self];
-    [SubAssign] [sub_assign] [sub]   [f32 ];
-)]
-impl Trait<Rhs> for Angle {
-    fn method(&mut self, rhs: Rhs) {
-        *self = self.method2(rhs);
     }
 }

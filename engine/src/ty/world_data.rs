@@ -111,7 +111,7 @@ pub struct PlaneModel {
     pub icon: Option<Arc<Path>>,
 }
 
-#[derive(Clone, Copy, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct ModelMotion {
     max_hor_vel: f32,
     hor_accel: f32,

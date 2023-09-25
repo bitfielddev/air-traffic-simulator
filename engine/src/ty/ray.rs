@@ -12,7 +12,7 @@ impl Vector for Vec2 {}
 
 impl Vector for Vec3 {}
 
-#[derive(Clone, Copy, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Ray<T: Vector> {
     pub tail: T,
     pub vec: T,

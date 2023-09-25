@@ -6,9 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glam = { version = "0.24.1", features = ["serde"] }
+glam = { version = "0.24.2", features = ["serde"] }
 serde = { version = "1.0.188", features = ["rc", "derive"] }
 smol_str = { version = "0.2.0", features = ["serde"] }
 eyre = "0.6.8"
 itertools = "0.11.0"
+derive_more = { version = "1.0.0-beta.3", features = ["full"] }
 duplicate = "1.0.0"

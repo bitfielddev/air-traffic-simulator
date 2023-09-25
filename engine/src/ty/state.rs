@@ -54,7 +54,7 @@ impl Plane {
     }
 }
 
-#[derive(Clone, Copy, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub enum Phase {
     #[default]
     Takeoff,
