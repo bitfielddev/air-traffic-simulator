@@ -31,7 +31,7 @@ use serde::{Deserialize, Serialize};
 pub struct Angle(pub f32);
 
 impl Angle {
-    fn check(&mut self) {
+    pub fn check(&mut self) {
         while self.0 > PI {
             self.0 -= TAU;
         }
