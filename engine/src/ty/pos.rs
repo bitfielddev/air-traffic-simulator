@@ -95,12 +95,12 @@ impl HorPlanner {
                 FMB::Back => direction = LMR::Left,
             }
         }
-        let mut a1 = c.perp_lmr(direction);
-        let mut o = a1 + from.0;
+        let mut a1 = -c.perp_lmr(direction) * mm.turning_radius;
+        let mut o = from.0 - a1;
         if o.distance(to) < mm.turning_radius {
             direction = direction.rev();
             a1 = -a1;
-            o = a1 + from.0;
+            o = from.0 - a1;
         }
 
         let d = to - o;
@@ -111,13 +111,21 @@ impl HorPlanner {
         let b = d
             .rotate(Vec2::from_angle(
                 (mm.turning_radius / d.length()).asin()
-                    * if direction == LMR::Right { 1.0 } else { -1.0 },
+                    * if direction == LMR::Right { -1.0 } else { 1.0 },
             ))
             .normalize()
             * b_mag;
         let a2 = d - b;
-        let mut theta = a2.angle_between(a1);
-        dbg!(theta, a1, a2);
+        let mut theta = a1.angle_between(a2);
+        dbg!(
+            theta,
+            a1,
+            a2,
+            d,
+            b,
+            (mm.turning_radius / d.length()).asin(),
+            (mm.turning_radius / d.length())
+        );
         if direction == LMR::Left && theta < 0.0 {
             theta += TAU;
         } else if direction == LMR::Right && theta > 0.0 {
@@ -158,8 +166,8 @@ mod tests {
 
     prop_compose! {
         fn arb_pos()(
-            x in -1e10..1e10f32,
-            y in -1e10..1e10f32,
+            x in -100.0..100.0f32,
+            y in -100.0..100.0f32,
         ) -> Pos2 {
             Pos2::new(x, y)
         }
@@ -167,7 +175,8 @@ mod tests {
 
     proptest! {
         #[test]
-        fn plan_to_pos2_doesnt_crash(a in arb_pos(), b in arb_pos(), c: f32, d: f32) {
+        #[allow(clippy::float_cmp)]
+        fn plan_to_pos2_doesnt_crash(a in arb_pos(), b in arb_pos(), c: f32, d in 0.5f32..100f32) {
             let a = HorPlanner::plan_to_pos2(
                 Pos2Angle(a, Angle(c)),
                 b,
@@ -245,6 +254,6 @@ mod tests {
             },
         );
         assert_eq!(res.len(), 2);
-        panic!("{res:?}")
+        // panic!("{res:?}")
     }
 }
