@@ -111,12 +111,13 @@ impl HorPlanner {
         let b = d
             .rotate(Vec2::from_angle(
                 (mm.turning_radius / d.length()).asin()
-                    * if direction == LMR::Right { -1.0 } else { 1.0 },
+                    * if direction == LMR::Right { 1.0 } else { -1.0 },
             ))
             .normalize()
             * b_mag;
         let a2 = d - b;
         let mut theta = a2.angle_between(a1);
+        dbg!(theta, a1, a2);
         if direction == LMR::Left && theta < 0.0 {
             theta += TAU;
         } else if direction == LMR::Right && theta > 0.0 {
@@ -144,7 +145,7 @@ pub fn plan_to_ver(_from: f32, _to: f32) -> VecDeque<f32> {
 
 #[cfg(test)]
 mod tests {
-    use std::f32::consts::FRAC_PI_2;
+    use std::f32::consts::{FRAC_PI_2, PI};
 
     use proptest::prelude::*;
 
@@ -155,17 +156,32 @@ mod tests {
         Pos2,
     };
 
+    prop_compose! {
+        fn arb_pos()(
+            x in -1e10..1e10f32,
+            y in -1e10..1e10f32,
+        ) -> Pos2 {
+            Pos2::new(x, y)
+        }
+    }
+
     proptest! {
         #[test]
-        fn plan_to_pos2_doesnt_crash(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
-            let _ = HorPlanner::plan_to_pos2(
-                Pos2Angle(Pos2::new(a, b), Angle(e)),
-                Pos2::new(c, d),
+        fn plan_to_pos2_doesnt_crash(a in arb_pos(), b in arb_pos(), c: f32, d: f32) {
+            let a = HorPlanner::plan_to_pos2(
+                Pos2Angle(a, Angle(c)),
+                b,
                 ModelMotion {
-                    turning_radius: f,
+                    turning_radius: d,
                     ..Default::default()
                 },
             );
+            for i in a.0 {
+                match i {
+                    HorPlanItem::Straight(i) => assert!(!i.is_nan()),
+                    HorPlanItem::Turn(i) => assert!(!i.0.is_nan())
+                }
+            }
         }
     }
 
@@ -185,6 +201,24 @@ mod tests {
         };
         assert!((theta + FRAC_PI_2) < f32::EPSILON * 10.0);
         assert_eq!(res[1], HorPlanItem::Straight(9.0));
+    }
+
+    #[test]
+    fn plan_to_pos2_180deg() {
+        let res = HorPlanner::plan_to_pos2(
+            Pos2Angle(Pos2::new(0.0, 0.0), Angle(FRAC_PI_2)),
+            Pos2::new(2.0, -10.0),
+            ModelMotion {
+                turning_radius: 1.0,
+                ..Default::default()
+            },
+        );
+        assert_eq!(res.len(), 2);
+        let HorPlanItem::Turn(Angle(theta)) = res[0] else {
+            panic!("Not HorPlanItem::Turn")
+        };
+        assert!((theta + PI) < f32::EPSILON * 10.0);
+        assert_eq!(res[1], HorPlanItem::Straight(10.0));
     }
 
     #[test]
