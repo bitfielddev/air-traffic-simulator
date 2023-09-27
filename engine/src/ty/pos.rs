@@ -117,15 +117,6 @@ impl HorPlanner {
             * b_mag;
         let a2 = d - b;
         let mut theta = a1.angle_between(a2);
-        dbg!(
-            theta,
-            a1,
-            a2,
-            d,
-            b,
-            (mm.turning_radius / d.length()).asin(),
-            (mm.turning_radius / d.length())
-        );
         if direction == LMR::Left && theta < 0.0 {
             theta += TAU;
         } else if direction == LMR::Right && theta > 0.0 {
@@ -141,8 +132,30 @@ impl HorPlanner {
         todo!()
     }
     #[must_use]
-    pub fn calc_positions(_cfg: &Config) -> VecDeque<Pos2Angle> {
+    pub fn calc_positions(&self, _cfg: &Config) -> VecDeque<Pos2Angle> {
         todo!()
+    }
+    #[must_use]
+    pub fn end(&self, from: Pos2Angle, mm: ModelMotion) -> Pos2Angle {
+        let mut pos = from;
+        for i in &self.0 {
+            match i {
+                HorPlanItem::Turn(angle) => {
+                    let Some(turning_rot) = angle.turning_rot() else {
+                        continue;
+                    };
+                    let a1 = pos.1.vec().perp_rot(turning_rot) * -mm.turning_radius;
+                    let a2 = a1.rotate(angle.vec());
+                    pos.0 = pos.0 - a1 + a2;
+                    pos.1 += *angle;
+                }
+                HorPlanItem::Straight(d) => {
+                    pos.0 += pos.1.vec() * *d;
+                }
+            }
+        }
+        pos.1 = pos.1.clamp();
+        pos
     }
 }
 
@@ -155,6 +168,7 @@ pub fn plan_to_ver(_from: f32, _to: f32) -> VecDeque<f32> {
 mod tests {
     use std::f32::consts::{FRAC_PI_2, PI};
 
+    use itertools::assert_equal;
     use proptest::prelude::*;
 
     use crate::ty::{
@@ -166,26 +180,31 @@ mod tests {
 
     prop_compose! {
         fn arb_pos()(
-            x in -100.0..100.0f32,
-            y in -100.0..100.0f32,
+            x in -1e5..1e5f32,
+            y in -1e5..1e5f32,
         ) -> Pos2 {
             Pos2::new(x, y)
+        }
+    }
+
+    fn mm(turning_radius: f32) -> ModelMotion {
+        ModelMotion {
+            turning_radius,
+            ..Default::default()
         }
     }
 
     proptest! {
         #[test]
         #[allow(clippy::float_cmp)]
-        fn plan_to_pos2_doesnt_crash(a in arb_pos(), b in arb_pos(), c: f32, d in 0.5f32..100f32) {
-            let a = HorPlanner::plan_to_pos2(
+        fn plan_to_pos2_doesnt_crash(a in arb_pos(), b in arb_pos(), c: f32, d in 0.5f32..1e5f32) {
+            let hp = HorPlanner::plan_to_pos2(
                 Pos2Angle(a, Angle(c)),
                 b,
-                ModelMotion {
-                    turning_radius: d,
-                    ..Default::default()
-                },
+                mm(d),
             );
-            for i in a.0 {
+            dbg!(b - hp.end(Pos2Angle(a, Angle(c)), mm(d)).0, b - a);
+            for i in hp.0 {
                 match i {
                     HorPlanItem::Straight(i) => assert!(!i.is_nan()),
                     HorPlanItem::Turn(i) => assert!(!i.0.is_nan())
@@ -199,10 +218,7 @@ mod tests {
         let res = HorPlanner::plan_to_pos2(
             Pos2Angle(Pos2::new(0.0, 0.0), Angle(FRAC_PI_2)),
             Pos2::new(10.0, 1.0),
-            ModelMotion {
-                turning_radius: 1.0,
-                ..Default::default()
-            },
+            mm(1.0),
         );
         assert_eq!(res.len(), 2);
         let HorPlanItem::Turn(Angle(theta)) = res[0] else {
@@ -217,10 +233,7 @@ mod tests {
         let res = HorPlanner::plan_to_pos2(
             Pos2Angle(Pos2::new(0.0, 0.0), Angle(FRAC_PI_2)),
             Pos2::new(2.0, -10.0),
-            ModelMotion {
-                turning_radius: 1.0,
-                ..Default::default()
-            },
+            mm(1.0),
         );
         assert_eq!(res.len(), 2);
         let HorPlanItem::Turn(Angle(theta)) = res[0] else {
@@ -235,10 +248,7 @@ mod tests {
         let res = HorPlanner::plan_to_pos2(
             Pos2Angle(Pos2::new(0.0, 0.0), Angle(0.0)),
             Pos2::new(10.0, 0.0),
-            ModelMotion {
-                turning_radius: 1.0,
-                ..Default::default()
-            },
+            mm(1.0),
         );
         assert_eq!(res.len(), 1);
         assert_eq!(res[0], HorPlanItem::Straight(10.0));
@@ -248,12 +258,14 @@ mod tests {
         let res = HorPlanner::plan_to_pos2(
             Pos2Angle(Pos2::new(0.0, 0.0), Angle(FRAC_PI_2)),
             Pos2::new(1.0, 0.0),
-            ModelMotion {
-                turning_radius: 1.0,
-                ..Default::default()
-            },
+            mm(1.0),
         );
         assert_eq!(res.len(), 2);
-        // panic!("{res:?}")
+        assert_eq!(res[0], HorPlanItem::Turn(Angle(5.235_988)));
+        assert_eq!(res[1], HorPlanItem::Straight(1.732_050_8));
+        dbg!(
+            res.end(Pos2Angle(Pos2::new(0.0, 0.0), Angle(FRAC_PI_2)), mm(1.0))
+                .0
+        );
     }
 }
