@@ -22,11 +22,10 @@ pub struct State {
 }
 impl State {
     #[must_use]
-    pub fn new(wd: &WorldData) -> Self {
+    pub fn new(airports: &[Arc<AirportData>]) -> Self {
         Self {
             planes: Vec::default(),
-            airports: wd
-                .airports
+            airports: airports
                 .iter()
                 .map(|a| Airport::new(Arc::clone(a)))
                 .collect(),
@@ -169,3 +168,47 @@ pub struct AirportEvent {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
 pub enum AirportEventPayload {}
+
+#[cfg(test)]
+mod tests {
+    use glam::Vec2;
+
+    use super::*;
+    use crate::{
+        util::{Class, Pos2},
+        world_data::ModelMotion,
+    };
+
+    #[test]
+    fn takeoff() {
+        let mut state = State::new(&[]);
+        state.planes.push(Plane::new(
+            &Arc::new(PlaneData {
+                motion: ModelMotion {
+                    max_a: Vec2::new(5.0, 10.0),
+                    max_v: Vec2::new(50.0, 2.0),
+                    turning_radius: 50.0,
+                },
+                ..PlaneData::default()
+            }),
+            &Arc::new(Flight::default()),
+            &Arc::new(Runway {
+                start: Pos2::ZERO,
+                end: Pos2::new(50.0, 0.0),
+                ..Runway::default()
+            }),
+        ));
+        let config = Config {
+            tick_duration: 1.0,
+            plane_spawn_chance: 0.0,
+        };
+        for _ in 0..100 {
+            state.tick(&config);
+            if matches!(state.planes[0].phase, PhaseData::Descent) {
+                state.planes[0].phase = PhaseData::Cruise;
+            }
+            // eprintln!("{:?} {:?}", state.planes[0].pos.pos_ang, state.planes[0].phase);
+            // eprintln!("{:?}", state.planes[0].pos.kinematics);
+        }
+    }
+}

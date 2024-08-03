@@ -47,7 +47,7 @@ impl PlanePos {
         let ds = self.kinematics.tick(dt, self.pos_ang, model_motion);
 
         let xz = self.planner.tick(ds.x, self.pos_ang.to_2(), model_motion);
-        self.pos_ang = Pos3Angle(xz.0.extend(ds.y), xz.1);
+        self.pos_ang = Pos3Angle(xz.0.extend(self.pos_ang.0.z + ds.y), xz.1);
     }
 }
 
@@ -66,7 +66,6 @@ impl FlightPlanner {
                 self.instructions.push_back(FlightInstruction::Dubins(path));
                 self.past_route.push(waypoint);
             } else {
-                eprintln!("lost {dsx}");
                 return Pos2Angle(pos_ang.0 + pos_ang.1.vec() * dsx, pos_ang.1);
             }
         }
@@ -210,7 +209,7 @@ mod tests {
 
         for _ in 0..25 {
             plane_pos.tick(1.0, model_motion);
-            eprintln!("{:?}", plane_pos.pos_ang);
+            // eprintln!("{:?}", plane_pos.pos_ang);
         }
     }
 }

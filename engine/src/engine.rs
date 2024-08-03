@@ -11,7 +11,7 @@ impl Engine {
     #[must_use]
     pub fn new(world: WorldData, config: Config) -> Self {
         Self {
-            state: State::new(&world),
+            state: State::new(&world.airports),
             world,
             config,
         }

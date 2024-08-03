@@ -40,7 +40,7 @@ pub struct AirportData {
     pub runways: Arc<[Arc<Runway>]>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Runway {
     pub start: Pos2,
     pub end: Pos2,
@@ -67,7 +67,7 @@ impl Runway {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Flight {
     pub airline: SmolStr,
     pub code: FlightCode,
@@ -107,7 +107,7 @@ impl Flight {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct PlaneData {
     pub id: PlaneModelId,
     pub name: SmolStr,

@@ -16,32 +16,34 @@ impl Kinematics {
     pub fn tick(&mut self, dt: f32, pos_ang: Pos3Angle, model_motion: ModelMotion) -> Vec2 {
         // https://gamedev.stackexchange.com/questions/73627/move-a-2d-point-to-a-target-first-accelerate-towards-the-target-then-decelerat
         if let Some(target_sy) = self.target_sy {
-            self.a.y = if self.v.y.powi(2) / (2.0 * model_motion.max_a.y) <= target_sy - pos_ang.0.y
+            self.a.y = if self.v.y.powi(2) / (2.0 * model_motion.max_a.y)
+                <= (target_sy - pos_ang.0.z).abs()
             {
-                model_motion.max_a.y.copysign(target_sy - pos_ang.0.y)
+                model_motion.max_a.y.copysign(target_sy - pos_ang.0.z)
             } else {
-                model_motion.max_a.y.copysign(pos_ang.0.y - target_sy)
-            }
+                model_motion.max_a.y.copysign(pos_ang.0.z - target_sy)
+            };
         }
         if let Some(target_vxz) = self.target_vxz {
             if let Some(target_sxz) = self.target_sxz {
                 self.a.x = self.v.x.mul_add(-self.v.x, target_vxz.powi(2)) / (2.0 * target_sxz);
             } else {
                 self.a.x = if target_vxz > self.v.x {
-                    model_motion.max_a.x.min(target_vxz - self.v.x)
+                    model_motion.max_a.x.min((target_vxz - self.v.x) / dt)
                 } else {
-                    (-model_motion.max_a.x).max(target_vxz - self.v.x)
+                    (-model_motion.max_a.x).max((target_vxz - self.v.x) / dt)
                 }
             }
         }
 
-        self.v += (self.a * dt).clamp(-model_motion.max_v, model_motion.max_v);
+        self.v = (self.v + self.a * dt).clamp(-model_motion.max_v, model_motion.max_v);
         let mut ds = self.v * dt;
 
         if let Some(target_sy) = self.target_sy {
-            if (target_sy - pos_ang.0.y).abs() <= (self.v.y * dt).abs() {
-                ds.y = target_sy - pos_ang.0.y;
+            if (target_sy - pos_ang.0.z).abs() <= (self.v.y * dt).abs() {
+                ds.y = target_sy - pos_ang.0.z;
                 self.target_sy = None;
+                self.v.y = 0.0;
                 self.a.y = 0.0;
             }
         }
@@ -82,8 +84,8 @@ mod tests {
             turning_radius: 0.0,
         };
         for _ in 0..100 {
-            pos_ang.0.y += k.tick(1.0, pos_ang, model_motion).y;
-            // eprintln!("{:?}", pos_ang.0.y);
+            pos_ang.0.z += k.tick(1.0, pos_ang, model_motion).y;
+            // eprintln!("{:?}", pos_ang.0.z);
             if k.target_sy.is_none() {
                 break;
             }
@@ -105,7 +107,7 @@ mod tests {
         };
         for _ in 0..100 {
             pos_ang.0.x += k.tick(1.0, pos_ang, model_motion).x;
-            // eprintln!("{:?}", k.v.x);
+            eprintln!("{:?}", pos_ang.0.x);
             if k.target_vxz.is_none() {
                 break;
             }
