@@ -6,8 +6,9 @@ use std::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
+    plane_pos::PlanePos,
     util::{pos::Pos3Angle, Pos3, Timestamp},
-    world_data::{AirportData, Flight, PlaneData, Waypoint, WorldData},
+    world_data::{AirportData, Flight, ModelMotion, PlaneData, Waypoint, WorldData},
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -34,7 +35,6 @@ pub struct Plane {
     pub pos: PlanePos,
     pub model: Arc<PlaneData>,
     pub flight: Arc<Flight>,
-    pub waypoint_route: VecDeque<Arc<Waypoint>>,
     pub phase: Phase,
     pub events: Arc<RwLock<VecDeque<PlaneEvent>>>,
 }
@@ -46,16 +46,10 @@ impl Plane {
             pos,
             model: Arc::clone(model),
             flight: Arc::clone(flight),
-            waypoint_route: VecDeque::new(),
             events: Arc::new(RwLock::default()),
             phase: Phase::default(),
         }
     }
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct PlanePos {
-    pos_ang: Pos3Angle,
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
