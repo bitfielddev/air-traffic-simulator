@@ -7,7 +7,7 @@ use derive_more::{
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
-use crate::ty::direction::Rotation;
+use crate::util::direction::Rotation;
 
 #[derive(
     Clone,

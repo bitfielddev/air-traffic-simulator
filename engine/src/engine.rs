@@ -1,4 +1,4 @@
-use crate::ty::{config::Config, state::State, world_data::WorldData};
+use crate::{config::Config, state::State, world_data::WorldData};
 
 #[derive(Clone)]
 pub struct Engine {

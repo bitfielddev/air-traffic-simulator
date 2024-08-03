@@ -5,14 +5,14 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::ty::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
+use crate::util::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorldData {
     pub classes: Arc<[Arc<[Class]>]>,
-    pub airports: Arc<[Arc<Airport>]>,
+    pub airports: Arc<[Arc<AirportData>]>,
     pub flights: Option<Arc<[Arc<Flight>]>>,
-    pub planes: Arc<[Arc<PlaneModel>]>,
+    pub planes: Arc<[Arc<PlaneData>]>,
     pub waypoints: Arc<[Arc<Waypoint>]>,
 }
 
@@ -33,7 +33,7 @@ impl WorldData {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Airport {
+pub struct AirportData {
     pub name: SmolStr,
     pub code: AirportCode,
     pub runways: Arc<[Runway]>,
@@ -72,7 +72,7 @@ pub struct Flight {
 }
 
 impl Flight {
-    pub fn from(&self, wd: &WorldData) -> Result<Arc<Airport>> {
+    pub fn from(&self, wd: &WorldData) -> Result<Arc<AirportData>> {
         let out = wd
             .airports
             .iter()
@@ -80,7 +80,7 @@ impl Flight {
             .ok_or_else(|| eyre!("No airport `{}`", self.from))?;
         Ok(Arc::clone(out))
     }
-    pub fn to(&self, wd: &WorldData) -> Result<Arc<Airport>> {
+    pub fn to(&self, wd: &WorldData) -> Result<Arc<AirportData>> {
         let out = wd
             .airports
             .iter()
@@ -88,7 +88,7 @@ impl Flight {
             .ok_or_else(|| eyre!("No airport `{}`", self.to))?;
         Ok(Arc::clone(out))
     }
-    pub fn plane(&self, wd: &WorldData) -> Result<Arc<[Arc<PlaneModel>]>> {
+    pub fn plane(&self, wd: &WorldData) -> Result<Arc<[Arc<PlaneData>]>> {
         self.plane
             .iter()
             .map(|p| {
@@ -103,7 +103,7 @@ impl Flight {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct PlaneModel {
+pub struct PlaneData {
     pub id: PlaneModelId,
     pub name: SmolStr,
     pub manufacturer: SmolStr,

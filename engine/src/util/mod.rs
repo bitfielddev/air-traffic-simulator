@@ -1,14 +1,10 @@
 use glam::{Vec2, Vec3};
 use smol_str::SmolStr;
 
-mod angle;
-pub mod config;
+pub mod angle;
 pub mod direction;
-pub mod engine;
 pub mod pos;
 pub mod ray;
-pub mod state;
-pub mod world_data;
 
 pub type AirportCode = SmolStr;
 pub type FlightCode = SmolStr;

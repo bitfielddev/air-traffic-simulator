@@ -1,7 +1,7 @@
 use duplicate::duplicate_item;
 use glam::{Vec2, Vec3, Vec3Swizzles};
 
-use crate::ty::pos::{Pos2Angle, Pos3Angle};
+use crate::util::pos::{Pos2Angle, Pos3Angle};
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum LMR {
