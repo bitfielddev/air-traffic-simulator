@@ -3,6 +3,7 @@ use smol_str::SmolStr;
 
 pub mod angle;
 pub mod direction;
+pub mod kinematics;
 pub mod pos;
 pub mod ray;
 

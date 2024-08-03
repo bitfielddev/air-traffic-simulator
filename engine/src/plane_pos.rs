@@ -5,7 +5,13 @@ use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    util::pos::Pos3Angle,
+    util::{
+        angle::Angle,
+        kinematics::Kinematics,
+        pos::{Pos2Angle, Pos3Angle},
+        ray::Ray,
+        Pos3,
+    },
     world_data::{ModelMotion, Waypoint},
 };
 
@@ -13,157 +19,144 @@ use crate::{
 pub struct PlanePos {
     pub pos_ang: Pos3Angle,
     pub kinematics: Kinematics,
-    pub waypoint_route: VecDeque<Arc<Waypoint>>,
-    pub model_motion: ModelMotion,
-    pub plan: VecDeque<FlightPlan>,
-    pub plan_s: f32,
+    pub planner: FlightPlanner,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub enum FlightPlan {
-    Dubins(#[serde(skip)] DubinsPath), // TODO
-    Straight(f32),
-    Turn { angle: f32, radius: f32 },
+pub struct FlightPlanner {
+    pub instructions: VecDeque<FlightInstruction>,
+    pub route: VecDeque<Arc<Waypoint>>,
+    pub instruction_s: f32,
+    pub past_instructions: Vec<FlightInstruction>,
+    pub past_route: Vec<Arc<Waypoint>>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Kinematics {
-    pub target_sy: Option<f32>,
-    pub target_vxz: Option<f32>,
-    pub target_sxz: Option<f32>,
-    pub a: Vec2,
-    pub v: Vec2,
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub enum FlightInstruction {
+    Dubins(#[serde(skip)] DubinsPath), // TODO
+    Straight(Ray<Vec2>),
+    Turn {
+        origin: Pos2Angle,
+        angle: f32,
+        radius: f32,
+    },
 }
 
 impl PlanePos {
-    pub fn tick(&mut self, dt: f32) {
-        let ds = self.kinematics.tick(dt, self.pos_ang, self.model_motion);
-        todo!()
+    pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) {
+        let ds = self.kinematics.tick(dt, self.pos_ang, model_motion);
+
+        let xz = self.planner.tick(ds.x, self.pos_ang.to_2(), model_motion);
+        self.pos_ang = Pos3Angle(xz.0.extend(ds.y), xz.1);
     }
 }
 
-impl Kinematics {
-    pub fn tick(&mut self, dt: f32, pos_ang: Pos3Angle, model_motion: ModelMotion) -> Vec2 {
-        // https://gamedev.stackexchange.com/questions/73627/move-a-2d-point-to-a-target-first-accelerate-towards-the-target-then-decelerat
-        if let Some(target_sy) = self.target_sy {
-            self.a.y = if self.v.y.powi(2) / (2.0 * model_motion.max_a.y) <= target_sy - pos_ang.0.y
-            {
-                model_motion.max_a.y.copysign(target_sy - pos_ang.0.y)
+impl FlightPlanner {
+    pub fn tick(&mut self, dsx: f32, pos_ang: Pos2Angle, model_motion: ModelMotion) -> Pos2Angle {
+        if self.instructions.is_empty() {
+            if let Some(waypoint) = self.route.pop_front() {
+                let waypoint_pos_ang =
+                    Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0).to_angle()));
+                let path = DubinsPath::shortest_from(
+                    pos_ang.into(),
+                    waypoint_pos_ang.into(),
+                    model_motion.turning_radius,
+                )
+                .unwrap();
+                self.instructions.push_back(FlightInstruction::Dubins(path));
+                self.past_route.push(waypoint);
             } else {
-                model_motion.max_a.y.copysign(pos_ang.0.y - target_sy)
+                eprintln!("lost {dsx}");
+                return Pos2Angle(pos_ang.0 + pos_ang.1.vec() * dsx, pos_ang.1);
             }
         }
-        if let Some(target_vxz) = self.target_vxz {
-            if let Some(target_sxz) = self.target_sxz {
-                self.a.x = self.v.x.mul_add(-self.v.x, target_vxz.powi(2)) / (2.0 * target_sxz);
-            } else {
-                self.a.x = if target_vxz > self.v.x {
-                    model_motion.max_a.x.min(target_vxz - self.v.x)
-                } else {
-                    (-model_motion.max_a.x).max(target_vxz - self.v.x)
-                }
-            }
-        }
+        let instruction = self.instructions.front().unwrap();
 
-        self.v += (self.a * dt).clamp(-model_motion.max_v, model_motion.max_v);
-        let mut ds = self.v * dt;
-
-        if let Some(target_sy) = self.target_sy {
-            if (target_sy - pos_ang.0.y).abs() <= (self.v.y * dt).abs() {
-                ds.y = target_sy - pos_ang.0.y;
-                self.target_sy = None;
-                self.a.y = 0.0;
-            }
+        self.instruction_s += dsx;
+        if let Some(sample) = instruction.sample(self.instruction_s) {
+            sample
+        } else {
+            let dsx2 = self.instruction_s - instruction.len();
+            let pos_ang2 = instruction.sample(instruction.len()).unwrap();
+            self.instruction_s = 0.0;
+            self.past_instructions
+                .push(self.instructions.pop_front().unwrap());
+            self.tick(dsx2, pos_ang2, model_motion)
         }
-        if let Some(target_vxz) = self.target_vxz {
-            if let Some(target_sxz) = self.target_sxz {
-                self.target_sxz = Some(target_sxz - ds.x.abs());
-            }
-            if (target_vxz - self.v.x).abs() <= (self.a.x * dt).abs() {
-                self.v.x = target_vxz;
-                if let Some(target_sxz) = self.target_sxz {
-                    ds.x += target_sxz.copysign(ds.x);
-                }
-                self.target_vxz = None;
-                self.target_sxz = None;
-                self.a.x = 0.0;
-            }
-        }
+    }
+}
 
-        ds
+impl FlightInstruction {
+    pub fn len(&self) -> f32 {
+        match self {
+            Self::Dubins(path) => path.length(),
+            Self::Straight(ray) => ray.vec.length(),
+            Self::Turn { angle, radius, .. } => radius * angle.abs(),
+        }
+    }
+    pub fn sample(&self, s: f32) -> Option<Pos2Angle> {
+        if s > self.len() || s < 0.0 {
+            return None;
+        }
+        Some(match self {
+            Self::Dubins(path) => path.sample(s).into(),
+            Self::Straight(ray) => Pos2Angle(
+                ray.tail + ray.vec.normalize() * s,
+                Angle(ray.vec.to_angle()),
+            ),
+            Self::Turn {
+                origin,
+                angle,
+                radius,
+            } => {
+                todo!()
+            }
+        })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::{angle::Angle, Pos3};
+    use crate::util::{Pos2, WaypointId};
 
     #[test]
-    fn change_altitude() {
-        let mut k = Kinematics {
-            target_sy: Some(123.0),
-            ..Kinematics::default()
+    fn waypoints() {
+        let mut plane_pos = PlanePos {
+            pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
+            kinematics: Kinematics {
+                target_sy: None,
+                target_vxz: None,
+                target_sxz: None,
+                a: Vec2::default(),
+                v: Vec2::new(1.0, 0.0),
+            },
+            planner: FlightPlanner {
+                instructions: VecDeque::new(),
+                route: VecDeque::from([
+                    Arc::new(Waypoint {
+                        name: WaypointId::default(),
+                        pos: Pos2::new(10.0, 0.0),
+                    }),
+                    Arc::new(Waypoint {
+                        name: WaypointId::default(),
+                        pos: Pos2::new(10.0, 10.0),
+                    }),
+                ]),
+                instruction_s: 0.0,
+                past_instructions: vec![],
+                past_route: vec![],
+            },
         };
-        let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
         let model_motion = ModelMotion {
-            max_a: Vec2::new(f32::INFINITY, 5.0),
-            max_v: Vec2::new(f32::INFINITY, 30.0),
-            turning_radius: 0.0,
+            max_a: Vec2::INFINITY,
+            max_v: Vec2::INFINITY,
+            turning_radius: 2.0,
         };
-        for _ in 0..100 {
-            pos_ang.0.y += k.tick(1.0, pos_ang, model_motion).y;
-            // eprintln!("{:?}", pos_ang.0.y);
-            if k.target_sy.is_none() {
-                break;
-            }
-        }
-        assert_eq!(k.target_sy, None);
-    }
 
-    #[test]
-    fn change_velocity() {
-        let mut k = Kinematics {
-            target_vxz: Some(123.0),
-            ..Kinematics::default()
-        };
-        let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
-        let model_motion = ModelMotion {
-            max_a: Vec2::new(5.0, f32::INFINITY),
-            max_v: Vec2::new(30.0, f32::INFINITY),
-            turning_radius: 0.0,
-        };
-        for _ in 0..100 {
-            pos_ang.0.x += k.tick(1.0, pos_ang, model_motion).x;
-            // eprintln!("{:?}", k.v.x);
-            if k.target_vxz.is_none() {
-                break;
-            }
+        for _ in 0..25 {
+            plane_pos.tick(1.0, model_motion);
+            eprintln!("{:?}", plane_pos.pos_ang);
         }
-        assert_eq!(k.target_vxz, None);
-    }
-
-    #[test]
-    fn change_velocity_with_target_displacement() {
-        let mut k = Kinematics {
-            target_vxz: Some(123.0),
-            target_sxz: Some(456.0),
-            ..Kinematics::default()
-        };
-        let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
-        let model_motion = ModelMotion {
-            max_a: Vec2::new(5.0, f32::INFINITY),
-            max_v: Vec2::new(30.0, f32::INFINITY),
-            turning_radius: 0.0,
-        };
-        for _ in 0..100 {
-            pos_ang.0.x += k.tick(1.0, pos_ang, model_motion).x;
-            // eprintln!("{:?} {:?}", k.v.x, pos_ang.0.x);
-            if k.target_vxz.is_none() {
-                break;
-            }
-        }
-        assert_eq!(k.target_vxz, None);
-        assert_eq!(k.target_sxz, None);
     }
 }
