@@ -22,7 +22,7 @@ pub struct PlanePos {
     pub planner: FlightPlanner,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct FlightPlanner {
     pub instructions: VecDeque<FlightInstruction>,
     pub route: VecDeque<Arc<Waypoint>>,
@@ -87,6 +87,7 @@ impl FlightPlanner {
 }
 
 impl FlightInstruction {
+    #[must_use]
     pub fn len(&self) -> f32 {
         match self {
             Self::Dubins(path) => path.length(),
@@ -94,9 +95,11 @@ impl FlightInstruction {
             Self::Turn { angle, radius, .. } => radius * angle.0.abs(),
         }
     }
+    #[must_use]
     pub fn end(&self) -> Pos2Angle {
         self.sample(self.len()).unwrap()
     }
+    #[must_use]
     pub fn sample(&self, s: f32) -> Option<Pos2Angle> {
         if s > self.len() || s < 0.0 {
             return None;

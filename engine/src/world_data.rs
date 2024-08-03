@@ -6,7 +6,7 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::util::{AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
+use crate::util::{ray::Ray, AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorldData {
@@ -37,7 +37,7 @@ impl WorldData {
 pub struct AirportData {
     pub name: SmolStr,
     pub code: AirportCode,
-    pub runways: Arc<[Runway]>,
+    pub runways: Arc<[Arc<Runway>]>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -60,6 +60,10 @@ impl Runway {
     #[must_use]
     pub const fn end3(&self) -> Pos3 {
         self.end.extend(self.altitude)
+    }
+    #[must_use]
+    pub fn ray(&self) -> Ray<Vec2> {
+        Ray::new(self.start, self.end)
     }
 }
 
