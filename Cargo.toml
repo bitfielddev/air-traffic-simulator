@@ -14,10 +14,10 @@ members = [
 ]
 
 
-[workspace.lints.rust]
+[lints.rust]
 future-incompatible = "deny"
 
-[workspace.lints.clippy]
+[lints.clippy]
 all = "warn"
 pedantic = "warn"
 cargo = "warn"
