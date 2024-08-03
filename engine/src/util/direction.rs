@@ -130,7 +130,7 @@ pub trait PerpRot: Copy {
         match lmr {
             LMR::Left => self.perp_rot(Rotation::Anticlockwise),
             LMR::Right => self.perp_rot(Rotation::Clockwise),
-            _ => panic!("Middle"),
+            LMR::Middle => panic!("Middle"),
         }
     }
 }

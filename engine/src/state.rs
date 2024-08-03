@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     plane_pos::PlanePos,
-    util::{pos::Pos3Angle, Pos3, Timestamp},
-    world_data::{AirportData, Flight, ModelMotion, PlaneData, Waypoint, WorldData},
+    world_data::{AirportData, Flight, PlaneData, WorldData},
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

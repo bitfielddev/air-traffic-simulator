@@ -84,8 +84,10 @@ mod tests {
 
     #[test]
     fn ascend() {
-        let mut k = Kinematics::default();
-        k.target_sy = Some(123.0);
+        let mut k = Kinematics {
+            target_sy: Some(123.0),
+            ..Kinematics::default()
+        };
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
         let model_motion = ModelMotion {
             max_hor_vel: 0.0,

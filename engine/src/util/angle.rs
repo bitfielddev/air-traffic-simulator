@@ -1,4 +1,4 @@
-use std::f32::consts::{PI, TAU};
+use std::f32::consts::TAU;
 
 use derive_more::{
     Add, AddAssign, Display, Div, DivAssign, From, Into, Mul, MulAssign, Rem, RemAssign, Sub,
@@ -33,6 +33,7 @@ use crate::util::direction::Rotation;
 pub struct Angle(pub f32);
 
 impl Angle {
+    #[must_use]
     pub fn clamp(mut self) -> Self {
         if self.0 > 0.0 {
             self.0 -= (self.0 / TAU).floor() * TAU;

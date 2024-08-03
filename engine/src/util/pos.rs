@@ -1,18 +1,7 @@
-use std::{collections::VecDeque, f32::consts::TAU, sync::Arc};
-
-use derive_more::{Index, IndexMut};
-use eyre::Result;
-use glam::{Vec2, Vec3Swizzles};
+use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    config::Config,
-    util::{
-        angle::Angle,
-        direction::{Direction, PerpRot, FMB, LMR},
-        Pos2, Pos3,
-    },
-};
+use crate::util::{angle::Angle, Pos2, Pos3};
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct Pos3Angle(pub Pos3, pub Angle);

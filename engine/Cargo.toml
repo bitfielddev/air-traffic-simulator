@@ -24,7 +24,7 @@ future-incompatible = "deny"
 [lints.clippy]
 all = "warn"
 pedantic = "warn"
-cargo = "warn"
+#cargo = "warn"
 nursery = "warn"
 
 missing_errors_doc = { level="allow", priority = 1 }
