@@ -32,6 +32,6 @@ impl From<Pos2Angle> for PosRot {
 
 impl From<PosRot> for Pos2Angle {
     fn from(value: PosRot) -> Self {
-        Pos2Angle(value.pos(), Angle(value.rot()))
+        Self(value.pos(), Angle(value.rot()))
     }
 }

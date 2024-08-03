@@ -7,11 +7,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     util::{
         angle::Angle,
-        direction::{Direction, PerpRot, Rotation},
+        direction::{PerpRot, Rotation},
         kinematics::Kinematics,
         pos::{Pos2Angle, Pos3Angle},
         ray::Ray,
-        Pos3,
     },
     world_data::{ModelMotion, Waypoint},
 };
@@ -78,7 +77,7 @@ impl FlightPlanner {
             sample
         } else {
             let dsx2 = self.instruction_s - instruction.len();
-            let pos_ang2 = instruction.sample(instruction.len()).unwrap();
+            let pos_ang2 = instruction.end();
             self.instruction_s = 0.0;
             self.past_instructions
                 .push(self.instructions.pop_front().unwrap());
@@ -94,6 +93,9 @@ impl FlightInstruction {
             Self::Straight(ray) => ray.vec.length(),
             Self::Turn { angle, radius, .. } => radius * angle.0.abs(),
         }
+    }
+    pub fn end(&self) -> Pos2Angle {
+        self.sample(self.len()).unwrap()
     }
     pub fn sample(&self, s: f32) -> Option<Pos2Angle> {
         if s > self.len() || s < 0.0 {
@@ -129,7 +131,7 @@ mod tests {
     use std::f32::consts::PI;
 
     use super::*;
-    use crate::util::{Pos2, WaypointId};
+    use crate::util::{Pos2, Pos3, WaypointId};
 
     #[test]
     fn waypoints() {
