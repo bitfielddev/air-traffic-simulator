@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     util::{
         angle::Angle,
+        direction::{Direction, PerpRot, Rotation},
         kinematics::Kinematics,
         pos::{Pos2Angle, Pos3Angle},
         ray::Ray,
@@ -37,7 +38,7 @@ pub enum FlightInstruction {
     Straight(Ray<Vec2>),
     Turn {
         origin: Pos2Angle,
-        angle: f32,
+        angle: Angle,
         radius: f32,
     },
 }
@@ -91,7 +92,7 @@ impl FlightInstruction {
         match self {
             Self::Dubins(path) => path.length(),
             Self::Straight(ray) => ray.vec.length(),
-            Self::Turn { angle, radius, .. } => radius * angle.abs(),
+            Self::Turn { angle, radius, .. } => radius * angle.0.abs(),
         }
     }
     pub fn sample(&self, s: f32) -> Option<Pos2Angle> {
@@ -109,7 +110,15 @@ impl FlightInstruction {
                 angle,
                 radius,
             } => {
-                todo!()
+                let vec = origin.1.vec().perp_rot(if angle.0 >= 0.0 {
+                    Rotation::Anticlockwise
+                } else {
+                    Rotation::Clockwise
+                }) * (*radius);
+                let rotate = *angle * s / self.len();
+                let pos = (origin.0 + vec) + (-vec).rotate(rotate.vec());
+                let angle = Angle(origin.1 .0 + rotate.0).clamp();
+                Pos2Angle(pos, angle)
             }
         })
     }
@@ -117,6 +126,8 @@ impl FlightInstruction {
 
 #[cfg(test)]
 mod tests {
+    use std::f32::consts::PI;
+
     use super::*;
     use crate::util::{Pos2, WaypointId};
 
@@ -143,6 +154,44 @@ mod tests {
                         pos: Pos2::new(10.0, 10.0),
                     }),
                 ]),
+                instruction_s: 0.0,
+                past_instructions: vec![],
+                past_route: vec![],
+            },
+        };
+        let model_motion = ModelMotion {
+            max_a: Vec2::INFINITY,
+            max_v: Vec2::INFINITY,
+            turning_radius: 2.0,
+        };
+
+        for _ in 0..25 {
+            plane_pos.tick(1.0, model_motion);
+            // eprintln!("{:?}", plane_pos.pos_ang);
+        }
+    }
+
+    #[test]
+    fn straight_turn() {
+        let mut plane_pos = PlanePos {
+            pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
+            kinematics: Kinematics {
+                target_sy: None,
+                target_vxz: None,
+                target_sxz: None,
+                a: Vec2::default(),
+                v: Vec2::new(1.0, 0.0),
+            },
+            planner: FlightPlanner {
+                instructions: VecDeque::from([
+                    FlightInstruction::Straight(Ray::new(Pos2::ZERO, Pos2::new(10.0, 0.0))),
+                    FlightInstruction::Turn {
+                        origin: Pos2Angle(Pos2::new(10.0, 0.0), Angle(0.0)),
+                        radius: 2.0,
+                        angle: Angle(PI),
+                    },
+                ]),
+                route: VecDeque::new(),
                 instruction_s: 0.0,
                 past_instructions: vec![],
                 past_route: vec![],
