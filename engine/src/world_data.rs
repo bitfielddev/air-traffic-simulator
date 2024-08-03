@@ -1,6 +1,7 @@
 use std::{cmp::Ordering, path::Path, sync::Arc};
 
 use eyre::{eyre, Result};
+use glam::Vec2;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -114,10 +115,8 @@ pub struct PlaneData {
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
 pub struct ModelMotion {
-    pub max_hor_vel: f32,
-    pub hor_accel: f32,
-    pub max_ver_vel: f32,
-    pub ver_accel: f32,
+    pub max_v: Vec2,
+    pub max_a: Vec2,
     pub turning_radius: f32,
 }
 
