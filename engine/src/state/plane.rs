@@ -1,10 +1,7 @@
-use std::{
-    collections::{HashMap, VecDeque},
-    sync::{Arc, RwLock},
-};
+use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::DubinsPath;
-use glam::{Vec3, Vec3Swizzles};
+use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
 use uuid::Uuid;
@@ -118,7 +115,7 @@ impl Plane {
                     }
                 })
             }
-            PhaseData::Landing { runway } => {
+            PhaseData::Landing { runway: _runway } => {
                 if self.pos.planner.instructions.is_empty() {
                     remove = true;
                 }
@@ -164,7 +161,7 @@ mod tests {
     };
 
     #[test]
-    fn takeoff() {
+    fn go_around() {
         let mut state = State::new(&[]);
         let runway = Arc::new(Runway {
             start: Pos2::ZERO,

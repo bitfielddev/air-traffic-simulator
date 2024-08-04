@@ -1,7 +1,4 @@
-use std::{
-    collections::VecDeque,
-    sync::{Arc, RwLock},
-};
+use std::{collections::VecDeque, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 
@@ -28,7 +25,7 @@ impl Airport {
             events: VecDeque::new(),
         }
     }
-    pub fn tick(&mut self, config: &Config) -> Vec<(PlaneStateId, PlaneEvent)> {
+    pub fn tick(&mut self, _config: &Config) -> Vec<(PlaneStateId, PlaneEvent)> {
         let mut send = vec![];
         for event in self.events.drain(..) {
             match event.payload {
