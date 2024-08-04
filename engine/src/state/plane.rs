@@ -10,50 +10,10 @@ use uuid::Uuid;
 
 use crate::{
     config::Config,
-    plane_pos::{FlightInstruction, FlightPlanner, PlanePos},
+    state::plane_pos::{FlightInstruction, FlightPlanner, PlanePos},
     util::{angle::Angle, kinematics::Kinematics, pos::Pos3Angle, AirportStateId, PlaneStateId},
-    world_data::{AirportData, Flight, PlaneData, Runway, WorldData},
+    world_data::{Flight, PlaneData, Runway},
 };
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct State {
-    pub planes: Vec<Plane>,
-    pub airports: Vec<Airport>,
-}
-impl State {
-    #[must_use]
-    pub fn new(airports: &[Arc<AirportData>]) -> Self {
-        Self {
-            planes: Vec::default(),
-            airports: airports
-                .iter()
-                .map(|a| Airport::new(Arc::clone(a)))
-                .collect(),
-        }
-    }
-    #[must_use]
-    pub fn plane(&self, id: &PlaneStateId) -> Option<&Plane> {
-        self.planes.iter().find(|a| a.id == *id)
-    }
-    #[must_use]
-    pub fn plane_mut(&mut self, id: &PlaneStateId) -> Option<&mut Plane> {
-        self.planes.iter_mut().find(|a| a.id == *id)
-    }
-    #[must_use]
-    pub fn airport(&self, id: &PlaneStateId) -> Option<&Airport> {
-        self.airports.iter().find(|a| a.id == *id)
-    }
-    #[must_use]
-    pub fn airport_mut(&mut self, id: &PlaneStateId) -> Option<&mut Airport> {
-        self.airports.iter_mut().find(|a| a.id == *id)
-    }
-    pub fn tick(&mut self, config: &Config) {
-        self.planes.retain_mut(|plane| plane.tick(config));
-        for airport in &mut self.airports {
-            airport.tick(config);
-        }
-    }
-}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Plane {
@@ -132,24 +92,6 @@ pub enum PhaseData {
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct Airport {
-    pub id: AirportStateId,
-    pub airport: Arc<AirportData>,
-    pub events: Arc<RwLock<VecDeque<AirportEvent>>>,
-}
-impl Airport {
-    #[must_use]
-    pub fn new(airport: Arc<AirportData>) -> Self {
-        Self {
-            id: airport.code.clone(),
-            airport,
-            events: Arc::new(RwLock::default()),
-        }
-    }
-    pub fn tick(&mut self, config: &Config) {}
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlaneEvent {
     pub from: AirportStateId,
     pub payload: PlaneEventPayload,
@@ -159,24 +101,15 @@ pub struct PlaneEvent {
 #[non_exhaustive]
 pub enum PlaneEventPayload {}
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
-pub struct AirportEvent {
-    pub from: PlaneStateId,
-    pub payload: AirportEventPayload,
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize)]
-#[non_exhaustive]
-pub enum AirportEventPayload {}
-
 #[cfg(test)]
 mod tests {
     use glam::Vec2;
 
     use super::*;
     use crate::{
-        util::{Class, Pos2},
-        world_data::ModelMotion,
+        state::State,
+        util::Pos2,
+        world_data::{Flight, ModelMotion, PlaneData, Runway},
     };
 
     #[test]
