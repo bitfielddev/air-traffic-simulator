@@ -140,9 +140,9 @@ mod tests {
         let mut plane_pos = PlanePos {
             pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
             kinematics: Kinematics {
-                target_sy: None,
-                target_vxz: None,
-                target_sxz: None,
+                target_sz: None,
+                target_vxy: None,
+                target_sxy: None,
                 a: Vec2::default(),
                 v: Vec2::new(1.0, 0.0),
             },
@@ -180,9 +180,9 @@ mod tests {
         let mut plane_pos = PlanePos {
             pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
             kinematics: Kinematics {
-                target_sy: None,
-                target_vxz: None,
-                target_sxz: None,
+                target_sz: None,
+                target_vxy: None,
+                target_sxy: None,
                 a: Vec2::default(),
                 v: Vec2::new(1.0, 0.0),
             },

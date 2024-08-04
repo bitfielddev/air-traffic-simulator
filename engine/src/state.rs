@@ -76,7 +76,7 @@ impl Plane {
                     Angle((runway.end - runway.start).to_angle()),
                 ),
                 kinematics: Kinematics {
-                    target_vxz: Some(50.0),
+                    target_vxy: Some(50.0),
                     ..Kinematics::default()
                 },
                 planner: FlightPlanner {
@@ -99,7 +99,7 @@ impl Plane {
                 let runway_progress =
                     plane_pos.distance(runway.start) / runway.end.distance(runway.start);
                 (runway_progress >= 0.75).then(|| {
-                    self.pos.kinematics.target_sy = Some(512.0);
+                    self.pos.kinematics.target_sz = Some(512.0);
                     PhaseData::Cruise
                 })
             }
@@ -185,8 +185,8 @@ mod tests {
         state.planes.push(Plane::new(
             &Arc::new(PlaneData {
                 motion: ModelMotion {
-                    max_a: Vec2::new(5.0, 10.0),
-                    max_v: Vec2::new(50.0, 2.0),
+                    max_a: Vec2::new(5.0, 5.0),
+                    max_v: Vec2::new(50.0, 10.0),
                     turning_radius: 50.0,
                 },
                 ..PlaneData::default()
@@ -207,8 +207,10 @@ mod tests {
             if matches!(state.planes[0].phase, PhaseData::Descent) {
                 state.planes[0].phase = PhaseData::Cruise;
             }
-            // eprintln!("{:?} {:?}", state.planes[0].pos.pos_ang, state.planes[0].phase);
-            // eprintln!("{:?}", state.planes[0].pos.kinematics);
+            eprintln!(
+                "{:?}\n{:?}\n{:?}",
+                state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
+            );
         }
     }
 }
