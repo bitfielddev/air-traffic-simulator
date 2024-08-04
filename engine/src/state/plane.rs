@@ -1,17 +1,26 @@
 use std::{
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     sync::{Arc, RwLock},
 };
 
-use glam::Vec3Swizzles;
+use dubins_paths::DubinsPath;
+use glam::{Vec3, Vec3Swizzles};
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
 use uuid::Uuid;
 
 use crate::{
     config::Config,
-    state::plane_pos::{FlightInstruction, FlightPlanner, PlanePos},
-    util::{angle::Angle, kinematics::Kinematics, pos::Pos3Angle, AirportStateId, PlaneStateId},
+    state::{
+        airport::{AirportEvent, AirportEventPayload},
+        plane_pos::{FlightInstruction, FlightPlanner, PlanePos},
+    },
+    util::{
+        angle::Angle,
+        kinematics::Kinematics,
+        pos::{Pos2Angle, Pos3Angle},
+        AirportStateId, PlaneStateId,
+    },
     world_data::{Flight, PlaneData, Runway},
 };
 
@@ -22,7 +31,7 @@ pub struct Plane {
     pub model: Arc<PlaneData>,
     pub flight: Arc<Flight>,
     pub phase: PhaseData,
-    pub events: Arc<RwLock<VecDeque<PlaneEvent>>>,
+    pub events: VecDeque<PlaneEvent>,
 }
 
 impl Plane {
@@ -46,14 +55,26 @@ impl Plane {
             },
             model: Arc::clone(model),
             flight: Arc::clone(flight),
-            events: Arc::new(RwLock::default()),
+            events: VecDeque::new(),
             phase: PhaseData::Takeoff {
                 runway: Arc::clone(runway),
             },
         }
     }
-    pub fn tick(&mut self, config: &Config) -> bool {
-        if let Some(new_phase) = match &self.phase {
+    pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
+        let mut remove = false;
+        let mut send = vec![];
+
+        let mut landing_runway = None;
+        for event in self.events.drain(..) {
+            match event.payload {
+                PlaneEventPayload::ClearForLanding(runway) => {
+                    landing_runway = Some(runway);
+                }
+            }
+        }
+
+        if let Some(new_phase) = match &mut self.phase {
             PhaseData::Takeoff { runway } => {
                 let plane_pos = self.pos.pos_ang.0.xy();
                 let runway_progress =
@@ -63,23 +84,51 @@ impl Plane {
                     PhaseData::Cruise
                 })
             }
-            PhaseData::Cruise => self
-                .pos
-                .planner
-                .route
-                .is_empty()
-                .then(|| PhaseData::Descent),
+            PhaseData::Cruise => self.pos.planner.route.is_empty().then(|| {
+                send.push((
+                    self.flight.to.clone(),
+                    AirportEvent {
+                        from: self.id.clone(),
+                        payload: AirportEventPayload::RequestRunway,
+                    },
+                ));
+                PhaseData::Descent
+            }),
             PhaseData::Descent => {
-                todo!("ask airport for runway")
+                landing_runway.map(|landing_runway| {
+                    self.pos.planner.instructions.extend([
+                        // TODO
+                        FlightInstruction::Dubins(
+                            DubinsPath::shortest_from(
+                                self.pos.pos_ang.to_2().into(),
+                                Pos2Angle(
+                                    landing_runway.start,
+                                    Angle((landing_runway.end - landing_runway.start).to_angle()),
+                                )
+                                .into(),
+                                self.model.motion.turning_radius,
+                            )
+                            .unwrap(),
+                        ),
+                        FlightInstruction::Straight(landing_runway.ray()),
+                    ]);
+                    self.pos.kinematics.target_sz = Some(landing_runway.altitude);
+                    PhaseData::Landing {
+                        runway: landing_runway,
+                    }
+                })
             }
             PhaseData::Landing { runway } => {
-                todo!()
+                if self.pos.planner.instructions.is_empty() {
+                    remove = true;
+                }
+                None
             }
         } {
             self.phase = new_phase;
         }
         self.pos.tick(config.tick_duration, self.model.motion);
-        true
+        (remove, send)
     }
 }
 
@@ -99,7 +148,9 @@ pub struct PlaneEvent {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
-pub enum PlaneEventPayload {}
+pub enum PlaneEventPayload {
+    ClearForLanding(Arc<Runway>),
+}
 
 #[cfg(test)]
 mod tests {
@@ -107,14 +158,24 @@ mod tests {
 
     use super::*;
     use crate::{
-        state::State,
+        state::{airport::Airport, State},
         util::Pos2,
-        world_data::{Flight, ModelMotion, PlaneData, Runway},
+        world_data::{AirportData, Flight, ModelMotion, PlaneData, Runway},
     };
 
     #[test]
     fn takeoff() {
         let mut state = State::new(&[]);
+        let runway = Arc::new(Runway {
+            start: Pos2::ZERO,
+            end: Pos2::new(50.0, 0.0),
+            ..Runway::default()
+        });
+        state.airports.push(Airport::new(Arc::new(AirportData {
+            code: "ABC".into(),
+            runways: Arc::new([Arc::clone(&runway)]),
+            ..AirportData::default()
+        })));
         state.planes.push(Plane::new(
             &Arc::new(PlaneData {
                 motion: ModelMotion {
@@ -124,12 +185,11 @@ mod tests {
                 },
                 ..PlaneData::default()
             }),
-            &Arc::new(Flight::default()),
-            &Arc::new(Runway {
-                start: Pos2::ZERO,
-                end: Pos2::new(50.0, 0.0),
-                ..Runway::default()
+            &Arc::new(Flight {
+                to: "ABC".into(),
+                ..Flight::default()
             }),
+            &runway,
         ));
         let config = Config {
             tick_duration: 1.0,
@@ -137,11 +197,11 @@ mod tests {
         };
         for _ in 0..100 {
             state.tick(&config);
-            if matches!(state.planes[0].phase, PhaseData::Descent) {
-                state.planes[0].phase = PhaseData::Cruise;
+            if state.planes.is_empty() {
+                break;
             }
             eprintln!(
-                "{:?}\n{:?}\n{:?}",
+                "{:?}\n{:?}\n{:?}\n",
                 state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
             );
         }

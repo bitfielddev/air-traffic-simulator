@@ -1,7 +1,8 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use airport::Airport;
 use plane::Plane;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{config::Config, util::PlaneStateId, world_data::AirportData};
@@ -43,9 +44,35 @@ impl State {
         self.airports.iter_mut().find(|a| a.id == *id)
     }
     pub fn tick(&mut self, config: &Config) {
-        self.planes.retain_mut(|plane| plane.tick(config));
-        for airport in &mut self.airports {
-            airport.tick(config);
+        let mut remove_list = vec![];
+        for (id, (remove, send)) in self
+            .planes
+            .par_iter_mut()
+            .map(|plane| (plane.id.clone(), plane.tick(config)))
+            .collect::<Vec<_>>()
+        {
+            if remove {
+                remove_list.push(id);
+            }
+            for (airport, event) in send {
+                if let Some(airport) = self.airport_mut(&airport) {
+                    airport.events.push_back(event);
+                }
+            }
+        }
+        self.planes.retain(|plane| !remove_list.contains(&plane.id));
+
+        for send in self
+            .airports
+            .par_iter_mut()
+            .map(|airport| airport.tick(config))
+            .collect::<Vec<_>>()
+        {
+            for (plane, event) in send {
+                if let Some(plane) = self.plane_mut(&plane) {
+                    plane.events.push_back(event);
+                }
+            }
         }
     }
 }

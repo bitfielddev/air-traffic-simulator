@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     config::Config,
+    state::plane::{PlaneEvent, PlaneEventPayload},
     util::{AirportStateId, PlaneStateId},
     world_data::AirportData,
 };
@@ -15,7 +16,7 @@ use crate::{
 pub struct Airport {
     pub id: AirportStateId,
     pub airport: Arc<AirportData>,
-    pub events: Arc<RwLock<VecDeque<AirportEvent>>>,
+    pub events: VecDeque<AirportEvent>,
 }
 
 impl Airport {
@@ -24,10 +25,28 @@ impl Airport {
         Self {
             id: airport.code.clone(),
             airport,
-            events: Arc::new(RwLock::default()),
+            events: VecDeque::new(),
         }
     }
-    pub fn tick(&mut self, config: &Config) {}
+    pub fn tick(&mut self, config: &Config) -> Vec<(PlaneStateId, PlaneEvent)> {
+        let mut send = vec![];
+        for event in self.events.drain(..) {
+            match event.payload {
+                AirportEventPayload::RequestRunway => {
+                    send.push((
+                        event.from,
+                        PlaneEvent {
+                            from: self.id.clone(),
+                            payload: PlaneEventPayload::ClearForLanding(Arc::clone(
+                                &self.airport.runways[0],
+                            )),
+                        },
+                    ));
+                }
+            }
+        }
+        send
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -38,4 +57,6 @@ pub struct AirportEvent {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[non_exhaustive]
-pub enum AirportEventPayload {}
+pub enum AirportEventPayload {
+    RequestRunway,
+}

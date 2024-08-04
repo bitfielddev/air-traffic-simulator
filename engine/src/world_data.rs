@@ -33,7 +33,7 @@ impl WorldData {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct AirportData {
     pub name: SmolStr,
     pub code: AirportCode,
