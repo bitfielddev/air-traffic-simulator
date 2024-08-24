@@ -5,11 +5,68 @@ use crate::{util::pos::Pos3Angle, world_data::ModelMotion};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Kinematics {
-    pub target_sz: Option<f32>,
-    pub target_vxy: Option<f32>,
-    pub target_sxy: Option<f32>,
+    pub x_target: Vec<Target>,
+    pub y_target: Vec<Target>,
     pub a: Vec2,
     pub v: Vec2,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct Target {
+    pub a: f32,
+    pub t: f32,
+}
+
+impl Target {
+    pub fn new(
+        v: Option<f32>,
+        s: Option<f32>,
+        t: Option<f32>,
+        max_v: f32,
+        max_a: f32,
+        u: f32,
+    ) -> Vec<Target> {
+        match (v, s, t) {
+            (Some(v), Some(s), Some(t)) => {}
+            (Some(v), Some(s), None) => {
+                let max_v = max_v.copysign(s);
+                let accelerate_a = max_a.copysign(max_v - u);
+                let decelerate_a = max_a.copysign(v - max_v);
+                let max_accelerate_s = (max_v.powi(2) - u.powi(2)) / accelerate_a / 2.0;
+                let max_decelerate_s = (v.powi(2) - max_v.powi(2)) / decelerate_a / 2.0;
+                if s.abs() > (max_accelerate_s + max_decelerate_s).abs() {
+                    let accelerate_t = (max_v - u) / accelerate_a;
+                    let constant_t = (s - max_accelerate_s - max_decelerate_s) / max_v;
+                    let decelerate_t = (v - max_v) / decelerate_a;
+                    vec![
+                        Self {
+                            a: accelerate_a,
+                            t: accelerate_t,
+                        },
+                        Self {
+                            a: 0.0,
+                            t: constant_t,
+                        },
+                        Self {
+                            a: decelerate_a,
+                            t: decelerate_t,
+                        },
+                    ]
+                } else {
+                    vec![Self {}, Self {}]
+                }
+            }
+            (Some(v), None, Some(t)) => {}
+            (None, Some(s), Some(t)) => {}
+            (Some(v), None, None) => {}
+            (None, None, Some(t)) => {}
+            (None, Some(s), None) => {}
+            (None, None, None) => {
+                // TODO warn
+                vec![]
+            }
+        }
+    }
 }
 
 impl Kinematics {
