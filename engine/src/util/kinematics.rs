@@ -1,7 +1,7 @@
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
-use crate::{util::pos::Pos3Angle, world_data::ModelMotion};
+use crate::world_data::ModelMotion;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Kinematics {
@@ -17,6 +17,7 @@ pub struct Target {
 }
 
 impl Target {
+    #[must_use]
     pub fn new(
         v: Option<f32>,
         s: Option<f32>,
@@ -24,7 +25,7 @@ impl Target {
         max_v: f32,
         max_a: f32,
         u: f32,
-    ) -> Vec<Target> {
+    ) -> Vec<Self> {
         match (v, s, t) {
             (Some(v), Some(s), Some(t)) => {
                 todo!()
@@ -33,8 +34,8 @@ impl Target {
                 let max_v = max_v.copysign(s);
                 let accelerate_a = max_a.copysign(max_v - u);
                 let decelerate_a = max_a.copysign(v - max_v);
-                let max_accelerate_s = (max_v.powi(2) - u.powi(2)) / accelerate_a / 2.0;
-                let max_decelerate_s = (v.powi(2) - max_v.powi(2)) / decelerate_a / 2.0;
+                let max_accelerate_s = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
+                let max_decelerate_s = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
                 if s.abs() > (max_accelerate_s + max_decelerate_s).abs() {
                     let accelerate_t = (max_v - u) / accelerate_a;
                     let constant_t = (s - max_accelerate_s - max_decelerate_s) / max_v;
@@ -55,9 +56,10 @@ impl Target {
                     ]
                 } else {
                     // https://www.wolframalpha.com/input?i=s%3D0.5%28u%2Bw%29%28w-u%29%2Fa1+%2B+0.5%28w%2Bv%29%28v-w%29%2Fa2+solve+for+w
-                    let w = ((accelerate_a * (v.powi(2) - 2.0 * decelerate_a * s)
-                        - decelerate_a * u.powi(2))
-                        / (accelerate_a - decelerate_a))
+                    let w = (accelerate_a.mul_add(
+                        v.mul_add(v, -(2.0 * decelerate_a * s)),
+                        -(decelerate_a * u.powi(2)),
+                    ) / (accelerate_a - decelerate_a))
                         .sqrt();
                     vec![
                         Self {
@@ -91,6 +93,7 @@ impl Target {
             }
         }
     }
+    #[must_use]
     pub fn sum_t(targets: Vec<Self>) -> f32 {
         targets.iter().map(|a| a.t).sum()
     }
@@ -108,7 +111,9 @@ impl Kinematics {
                     break;
                 }
                 let dt_used = x_target.t.min(dt_left);
-                self.v.x += (dt_used * x_target.a);
+                self.v.x = dt_used
+                    .mul_add(x_target.a, self.v.x)
+                    .clamp(-model_motion.max_v.x, model_motion.max_v.x);
                 dsx += self.v.x * dt_used;
 
                 x_target.t -= dt_used;
@@ -118,7 +123,7 @@ impl Kinematics {
                 }
             }
             if self.x_target.is_empty() {
-                dsx + self.v.x * dt_left.max(0.0)
+                self.v.x.mul_add(dt_left.max(0.0), dsx)
             } else {
                 dsx
             }
@@ -133,7 +138,9 @@ impl Kinematics {
                     break;
                 }
                 let dt_used = y_target.t.min(dt_left);
-                self.v.y += (dt_used * y_target.a);
+                self.v.y = dt_used
+                    .mul_add(y_target.a, self.v.y)
+                    .clamp(-model_motion.max_v.y, model_motion.max_v.y);
                 dsy += self.v.y * dt_used;
 
                 y_target.t -= dt_used;
@@ -143,7 +150,7 @@ impl Kinematics {
                 }
             }
             if self.y_target.is_empty() {
-                dsy + self.v.y * dt_left.max(0.0)
+                self.v.y.mul_add(dt_left.max(0.0), dsy)
             } else {
                 dsy
             }
@@ -156,7 +163,7 @@ impl Kinematics {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::util::{angle::Angle, Pos3};
+    use crate::util::{angle::Angle, pos::Pos3Angle, Pos3};
 
     #[test]
     fn change_altitude() {

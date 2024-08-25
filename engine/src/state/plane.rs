@@ -41,10 +41,7 @@ impl Plane {
                     runway.start3(),
                     Angle((runway.end - runway.start).to_angle()),
                 ),
-                kinematics: Kinematics {
-                    //target_vxy: Some(50.0),
-                    ..Kinematics::default()
-                },
+                kinematics: Kinematics::default(),
                 planner: FlightPlanner {
                     instructions: VecDeque::from([FlightInstruction::Straight(runway.ray())]),
                     ..FlightPlanner::default()
