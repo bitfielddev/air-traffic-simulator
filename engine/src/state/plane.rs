@@ -34,7 +34,7 @@ pub struct Plane {
 impl Plane {
     #[must_use]
     pub fn new(model: &Arc<PlaneData>, flight: &Arc<Flight>, runway: &Arc<Runway>) -> Self {
-        Self {
+        let mut s = Self {
             id: Uuid::new_v4().to_smolstr(),
             pos: PlanePos {
                 pos_ang: Pos3Angle(
@@ -42,10 +42,9 @@ impl Plane {
                     Angle((runway.end - runway.start).to_angle()),
                 ),
                 kinematics: Kinematics::default(),
-                planner: FlightPlanner {
-                    instructions: VecDeque::from([FlightInstruction::Straight(runway.ray())]),
-                    ..FlightPlanner::default()
-                },
+                planner: FlightPlanner::new(VecDeque::from([FlightInstruction::Straight(
+                    runway.ray(),
+                )])),
             },
             model: Arc::clone(model),
             flight: Arc::clone(flight),
@@ -53,7 +52,11 @@ impl Plane {
             phase: PhaseData::Takeoff {
                 runway: Arc::clone(runway),
             },
-        }
+        };
+        s.pos
+            .kinematics
+            .target_x(Some(s.model.motion.max_v.x), None, None, s.model.motion);
+        s
     }
     pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
         let mut remove = false;
@@ -74,7 +77,12 @@ impl Plane {
                 let runway_progress =
                     plane_pos.distance(runway.start) / runway.end.distance(runway.start);
                 (runway_progress >= 0.75).then(|| {
-                    // self.pos.kinematics.target_sz = Some(512.0); TODO
+                    self.pos.kinematics.target_y(
+                        Some(0.0),
+                        Some(512.0 - self.pos.pos_ang.0.z),
+                        None,
+                        self.model.motion,
+                    );
                     PhaseData::Cruise
                 })
             }
@@ -106,7 +114,12 @@ impl Plane {
                         ),
                         FlightInstruction::Straight(landing_runway.ray()),
                     ]);
-                    // self.pos.kinematics.target_sz = Some(landing_runway.altitude); TODO
+                    self.pos.kinematics.target_y(
+                        Some(0.0),
+                        Some(landing_runway.altitude - self.pos.pos_ang.0.z),
+                        None,
+                        self.model.motion,
+                    );
                     PhaseData::Landing {
                         runway: landing_runway,
                     }

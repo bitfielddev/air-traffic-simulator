@@ -52,6 +52,12 @@ impl PlanePos {
 }
 
 impl FlightPlanner {
+    pub fn new(instructions: VecDeque<FlightInstruction>) -> Self {
+        Self {
+            instructions,
+            ..Default::default()
+        }
+    }
     pub fn tick(&mut self, dsx: f32, pos_ang: Pos2Angle, model_motion: ModelMotion) -> Pos2Angle {
         if self.instructions.is_empty() {
             if let Some(waypoint) = self.route.pop_front() {
@@ -132,6 +138,8 @@ impl FlightInstruction {
 mod tests {
     use std::f32::consts::PI;
 
+    use assertables::*;
+
     use super::*;
     use crate::util::{Pos2, Pos3, WaypointId};
 
@@ -155,9 +163,7 @@ mod tests {
                         pos: Pos2::new(10.0, 10.0),
                     }),
                 ]),
-                instruction_s: 0.0,
-                past_instructions: vec![],
-                past_route: vec![],
+                ..Default::default()
             },
         };
         let model_motion = ModelMotion {
@@ -169,6 +175,13 @@ mod tests {
         for _ in 0..25 {
             plane_pos.tick(1.0, model_motion);
             // eprintln!("{:?}", plane_pos.pos_ang);
+            if plane_pos.planner.instructions.is_empty() {
+                assert_lt!(
+                    plane_pos.pos_ang.to_2().0.distance(Pos2::new(10.0, 10.0)),
+                    1.0
+                );
+                break;
+            }
         }
     }
 
@@ -180,20 +193,14 @@ mod tests {
                 v: Vec2::new(1.0, 0.0),
                 ..Default::default()
             },
-            planner: FlightPlanner {
-                instructions: VecDeque::from([
-                    FlightInstruction::Straight(Ray::new(Pos2::ZERO, Pos2::new(10.0, 0.0))),
-                    FlightInstruction::Turn {
-                        origin: Pos2Angle(Pos2::new(10.0, 0.0), Angle(0.0)),
-                        radius: 2.0,
-                        angle: Angle(PI),
-                    },
-                ]),
-                route: VecDeque::new(),
-                instruction_s: 0.0,
-                past_instructions: vec![],
-                past_route: vec![],
-            },
+            planner: FlightPlanner::new(VecDeque::from([
+                FlightInstruction::Straight(Ray::new(Pos2::ZERO, Pos2::new(10.0, 0.0))),
+                FlightInstruction::Turn {
+                    origin: Pos2Angle(Pos2::new(10.0, 0.0), Angle(0.0)),
+                    radius: 2.0,
+                    angle: Angle(PI),
+                },
+            ])),
         };
         let model_motion = ModelMotion {
             max_a: Vec2::INFINITY,
@@ -204,6 +211,14 @@ mod tests {
         for _ in 0..25 {
             plane_pos.tick(1.0, model_motion);
             // eprintln!("{:?}", plane_pos.pos_ang);
+            if plane_pos.planner.instructions.is_empty() {
+                assert_lt!(
+                    plane_pos.pos_ang.to_2().0.distance(Pos2::new(10.0, 4.0)),
+                    1.0
+                );
+                assert_in_delta!(plane_pos.pos_ang.1 .0, PI, 0.01);
+                break;
+            }
         }
     }
 }

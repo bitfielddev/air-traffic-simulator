@@ -100,6 +100,40 @@ impl Target {
 }
 
 impl Kinematics {
+    pub fn target_x(
+        &mut self,
+        v: Option<f32>,
+        ds: Option<f32>,
+        dt: Option<f32>,
+        model_motion: ModelMotion,
+    ) -> &Vec<Target> {
+        self.x_target = Target::new(
+            v,
+            ds,
+            dt,
+            model_motion.max_v.x,
+            model_motion.max_a.x,
+            self.v.x,
+        );
+        &self.x_target
+    }
+    pub fn target_y(
+        &mut self,
+        v: Option<f32>,
+        ds: Option<f32>,
+        dt: Option<f32>,
+        model_motion: ModelMotion,
+    ) -> &Vec<Target> {
+        self.y_target = Target::new(
+            v,
+            ds,
+            dt,
+            model_motion.max_v.y,
+            model_motion.max_a.y,
+            self.v.y,
+        );
+        &self.y_target
+    }
     pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) -> Vec2 {
         let dsx = if self.x_target.is_empty() {
             self.v.x * dt
@@ -180,18 +214,10 @@ mod tests {
             max_v: Vec2::new(f32::INFINITY, 30.0),
             turning_radius: 0.0,
         };
-        let mut k = Kinematics {
-            y_target: Target::new(
-                Some(0.0),
-                Some(123.0),
-                None,
-                model_motion.max_v.y,
-                model_motion.max_a.y,
-                0.0,
-            ),
-            ..Kinematics::default()
-        };
+        let mut k = Kinematics::default();
+        k.target_y(Some(0.0), Some(123.0), None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
+
         for _ in 0..100 {
             pos_ang.0.z += k.tick(1.0, model_motion).y;
             // eprintln!("{:?} {:?} {:?}", pos_ang.0.z, k.v.y, k.y_target.first());
@@ -210,18 +236,10 @@ mod tests {
             max_v: Vec2::new(30.0, f32::INFINITY),
             turning_radius: 0.0,
         };
-        let mut k = Kinematics {
-            x_target: Target::new(
-                Some(30.0),
-                None,
-                None,
-                model_motion.max_v.x,
-                model_motion.max_a.x,
-                0.0,
-            ),
-            ..Kinematics::default()
-        };
+        let mut k = Kinematics::default();
+        k.target_x(Some(30.0), None, None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
+
         for _ in 0..100 {
             pos_ang.0.x += k.tick(1.0, model_motion).x;
             // eprintln!("{:?} {:?}", pos_ang.0.x, k.v.x);
@@ -240,21 +258,13 @@ mod tests {
             max_v: Vec2::new(30.0, f32::INFINITY),
             turning_radius: 0.0,
         };
-        let mut k = Kinematics {
-            x_target: Target::new(
-                Some(30.0),
-                Some(100.0),
-                None,
-                model_motion.max_v.x,
-                model_motion.max_a.x,
-                0.0,
-            ),
-            ..Kinematics::default()
-        };
+        let mut k = Kinematics::default();
+        k.target_x(Some(30.0), Some(100.0), None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
+
         for _ in 0..100 {
             pos_ang.0.x += k.tick(1.0, model_motion).x;
-            eprintln!("{:?} {:?} {:?}", pos_ang.0.x, k.v.x, k.x_target.first());
+            // eprintln!("{:?} {:?} {:?}", pos_ang.0.x, k.v.x, k.x_target.first());
             if k.x_target.is_empty() {
                 break;
             }
