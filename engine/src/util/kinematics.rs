@@ -1,7 +1,7 @@
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
-use crate::{util::pos::Pos3Angle, world_data::ModelMotion};
+use crate::world_data::ModelMotion;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Kinematics {
@@ -14,6 +14,8 @@ pub struct Kinematics {
 pub struct Target {
     pub a: f32,
     pub dt: f32,
+    pub end_v: Option<f32>,
+    pub end_s: Option<f32>,
 }
 
 impl Target {
@@ -44,14 +46,20 @@ impl Target {
                         Self {
                             a: accelerate_a,
                             dt: accelerate_dt,
+                            end_v: Some(max_v),
+                            end_s: Some(max_accelerate_ds),
                         },
                         Self {
                             a: 0.0,
                             dt: constant_dt,
+                            end_v: Some(max_v),
+                            end_s: Some(ds - max_accelerate_ds - max_decelerate_ds),
                         },
                         Self {
                             a: decelerate_a,
                             dt: decelerate_dt,
+                            end_v: Some(v),
+                            end_s: Some(max_decelerate_ds),
                         },
                     ]
                 } else {
@@ -60,15 +68,24 @@ impl Target {
                         v.mul_add(v, -(2.0 * decelerate_a * ds)),
                         -(decelerate_a * u.powi(2)),
                     ) / (accelerate_a - decelerate_a))
-                        .sqrt();
+                        .sqrt()
+                        .copysign(ds);
+                    let accelerate_dt = (w - u) / accelerate_a;
+                    let decelerate_dt = (v - w) / decelerate_a;
+                    let accelerate_ds = (u + w) * accelerate_dt / 2.0;
+                    let decelerate_ds = (w + v) * decelerate_dt / 2.0;
                     vec![
                         Self {
                             a: accelerate_a,
-                            dt: (w - u) / accelerate_a,
+                            dt: accelerate_dt,
+                            end_v: Some(w),
+                            end_s: Some(accelerate_ds),
                         },
                         Self {
                             a: decelerate_a,
-                            dt: (v - w) / decelerate_a,
+                            dt: decelerate_dt,
+                            end_v: Some(v),
+                            end_s: Some(decelerate_ds),
                         },
                     ]
                 }
@@ -82,7 +99,12 @@ impl Target {
             (Some(v), None, None) => {
                 let a = max_a.copysign(v - u);
                 let dt = (v - u) / a;
-                vec![Self { a, dt }]
+                vec![Self {
+                    a,
+                    dt,
+                    end_v: Some(v),
+                    end_s: None,
+                }]
             }
             (None, Some(ds), None) => {
                 todo!()
@@ -149,10 +171,19 @@ impl Kinematics {
                     .mul_add(x_target.a, self.v.x)
                     .clamp(-model_motion.max_v.x, model_motion.max_v.x);
                 dsx += self.v.x * dt_used;
+                if let Some(end_s) = &mut x_target.end_s {
+                    *end_s -= self.v.x * dt_used;
+                }
 
                 x_target.dt -= dt_used;
                 dt_left -= dt_used;
                 if x_target.dt <= 0.0 {
+                    if let Some(end_v) = x_target.end_v {
+                        self.v.x = end_v;
+                    }
+                    if let Some(end_s) = x_target.end_s {
+                        dsx += end_s;
+                    }
                     self.x_target.remove(0);
                 }
             }
@@ -176,20 +207,23 @@ impl Kinematics {
                     .mul_add(y_target.a, self.v.y)
                     .clamp(-model_motion.max_v.y, model_motion.max_v.y);
                 dsy += self.v.y * dt_used;
+                if let Some(end_s) = &mut y_target.end_s {
+                    *end_s -= self.v.y * dt_used;
+                }
 
                 y_target.dt -= dt_used;
                 dt_left -= dt_used;
                 if y_target.dt <= 0.0 {
+                    if let Some(end_v) = y_target.end_v {
+                        self.v.y = end_v;
+                    }
+                    if let Some(end_s) = y_target.end_s {
+                        dsy += end_s;
+                    }
                     self.y_target.remove(0);
                 }
             }
             if self.y_target.is_empty() {
-                eprintln!(
-                    "{} {} {}",
-                    dt_left,
-                    self.v.y.mul_add(dt_left.max(0.0), dsy),
-                    dsy
-                );
                 self.v.y.mul_add(dt_left.max(0.0), dsy)
             } else {
                 dsy

@@ -52,6 +52,7 @@ impl PlanePos {
 }
 
 impl FlightPlanner {
+    #[must_use]
     pub fn new(instructions: VecDeque<FlightInstruction>) -> Self {
         Self {
             instructions,

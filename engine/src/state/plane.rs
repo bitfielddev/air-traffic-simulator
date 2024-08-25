@@ -94,6 +94,12 @@ impl Plane {
                         payload: AirportEventPayload::RequestRunway,
                     },
                 ));
+                self.pos.kinematics.target_x(
+                    Some(self.model.motion.max_v.x / 2.0),
+                    None,
+                    None,
+                    self.model.motion,
+                );
                 PhaseData::Descent
             }),
             PhaseData::Descent => {
@@ -186,7 +192,7 @@ mod tests {
         state.planes.push(Plane::new(
             &Arc::new(PlaneData {
                 motion: ModelMotion {
-                    max_a: Vec2::new(5.0, 5.0),
+                    max_a: Vec2::new(5.0, 2.5),
                     max_v: Vec2::new(50.0, 10.0),
                     turning_radius: 50.0,
                 },
