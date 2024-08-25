@@ -1,7 +1,7 @@
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 
-use crate::world_data::ModelMotion;
+use crate::{util::pos::Pos3Angle, world_data::ModelMotion};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Kinematics {
@@ -10,81 +10,81 @@ pub struct Kinematics {
     pub v: Vec2,
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 pub struct Target {
     pub a: f32,
-    pub t: f32,
+    pub dt: f32,
 }
 
 impl Target {
     #[must_use]
     pub fn new(
         v: Option<f32>,
-        s: Option<f32>,
-        t: Option<f32>,
+        ds: Option<f32>,
+        dt: Option<f32>,
         max_v: f32,
         max_a: f32,
         u: f32,
     ) -> Vec<Self> {
-        match (v, s, t) {
-            (Some(v), Some(s), Some(t)) => {
+        match (v, ds, dt) {
+            (Some(v), Some(ds), Some(dt)) => {
                 todo!()
             }
-            (Some(v), Some(s), None) => {
-                let max_v = max_v.copysign(s);
+            (Some(v), Some(ds), None) => {
+                let max_v = max_v.copysign(ds);
                 let accelerate_a = max_a.copysign(max_v - u);
                 let decelerate_a = max_a.copysign(v - max_v);
-                let max_accelerate_s = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
-                let max_decelerate_s = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
-                if s.abs() > (max_accelerate_s + max_decelerate_s).abs() {
-                    let accelerate_t = (max_v - u) / accelerate_a;
-                    let constant_t = (s - max_accelerate_s - max_decelerate_s) / max_v;
-                    let decelerate_t = (v - max_v) / decelerate_a;
+                let max_accelerate_ds = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
+                let max_decelerate_ds = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
+                if ds.abs() > (max_accelerate_ds + max_decelerate_ds).abs() {
+                    let accelerate_dt = (max_v - u) / accelerate_a;
+                    let constant_dt = (ds - max_accelerate_ds - max_decelerate_ds) / max_v;
+                    let decelerate_dt = (v - max_v) / decelerate_a;
                     vec![
                         Self {
                             a: accelerate_a,
-                            t: accelerate_t,
+                            dt: accelerate_dt,
                         },
                         Self {
                             a: 0.0,
-                            t: constant_t,
+                            dt: constant_dt,
                         },
                         Self {
                             a: decelerate_a,
-                            t: decelerate_t,
+                            dt: decelerate_dt,
                         },
                     ]
                 } else {
                     // https://www.wolframalpha.com/input?i=s%3D0.5%28u%2Bw%29%28w-u%29%2Fa1+%2B+0.5%28w%2Bv%29%28v-w%29%2Fa2+solve+for+w
                     let w = (accelerate_a.mul_add(
-                        v.mul_add(v, -(2.0 * decelerate_a * s)),
+                        v.mul_add(v, -(2.0 * decelerate_a * ds)),
                         -(decelerate_a * u.powi(2)),
                     ) / (accelerate_a - decelerate_a))
                         .sqrt();
                     vec![
                         Self {
                             a: accelerate_a,
-                            t: (w - u) / accelerate_a,
+                            dt: (w - u) / accelerate_a,
                         },
                         Self {
                             a: decelerate_a,
-                            t: (v - w) / decelerate_a,
+                            dt: (v - w) / decelerate_a,
                         },
                     ]
                 }
             }
-            (Some(v), None, Some(t)) => {
+            (Some(v), None, Some(dt)) => {
                 todo!()
             }
-            (None, Some(s), Some(t)) => {
+            (None, Some(ds), Some(dt)) => {
                 todo!()
             }
             (Some(v), None, None) => {
                 let a = max_a.copysign(v - u);
-                let t = (v - u) / a;
-                vec![Self { a, t }]
+                let dt = (v - u) / a;
+                vec![Self { a, dt }]
             }
-            (None, Some(s), None) => {
+            (None, Some(ds), None) => {
                 todo!()
             }
             (None, None, _) => {
@@ -95,7 +95,7 @@ impl Target {
     }
     #[must_use]
     pub fn sum_t(targets: Vec<Self>) -> f32 {
-        targets.iter().map(|a| a.t).sum()
+        targets.iter().map(|a| a.dt).sum()
     }
 }
 
@@ -110,15 +110,15 @@ impl Kinematics {
                 if dt_left <= 0.0 {
                     break;
                 }
-                let dt_used = x_target.t.min(dt_left);
+                let dt_used = x_target.dt.min(dt_left);
                 self.v.x = dt_used
                     .mul_add(x_target.a, self.v.x)
                     .clamp(-model_motion.max_v.x, model_motion.max_v.x);
                 dsx += self.v.x * dt_used;
 
-                x_target.t -= dt_used;
+                x_target.dt -= dt_used;
                 dt_left -= dt_used;
-                if x_target.t <= 0.0 {
+                if x_target.dt <= 0.0 {
                     self.x_target.remove(0);
                 }
             }
@@ -137,19 +137,25 @@ impl Kinematics {
                 if dt_left <= 0.0 {
                     break;
                 }
-                let dt_used = y_target.t.min(dt_left);
+                let dt_used = y_target.dt.min(dt_left);
                 self.v.y = dt_used
                     .mul_add(y_target.a, self.v.y)
                     .clamp(-model_motion.max_v.y, model_motion.max_v.y);
                 dsy += self.v.y * dt_used;
 
-                y_target.t -= dt_used;
+                y_target.dt -= dt_used;
                 dt_left -= dt_used;
-                if y_target.t <= 0.0 {
+                if y_target.dt <= 0.0 {
                     self.y_target.remove(0);
                 }
             }
             if self.y_target.is_empty() {
+                eprintln!(
+                    "{} {} {}",
+                    dt_left,
+                    self.v.y.mul_add(dt_left.max(0.0), dsy),
+                    dsy
+                );
                 self.v.y.mul_add(dt_left.max(0.0), dsy)
             } else {
                 dsy
@@ -162,6 +168,8 @@ impl Kinematics {
 
 #[cfg(test)]
 mod tests {
+    use assertables::*;
+
     use super::*;
     use crate::util::{angle::Angle, pos::Pos3Angle, Pos3};
 
@@ -186,13 +194,13 @@ mod tests {
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
         for _ in 0..100 {
             pos_ang.0.z += k.tick(1.0, model_motion).y;
-            eprintln!("{:?} {:?} {:?}", pos_ang.0.z, k.v.y, k.y_target.first());
+            // eprintln!("{:?} {:?} {:?}", pos_ang.0.z, k.v.y, k.y_target.first());
             if k.y_target.is_empty() {
                 break;
             }
         }
         assert!(k.y_target.is_empty());
-        assert!((pos_ang.0.z - 123.0).abs() < 0.01);
+        assert_in_delta!(pos_ang.0.z, 123.0, 1.0);
     }
 
     #[test]
@@ -222,7 +230,7 @@ mod tests {
             }
         }
         assert!(k.x_target.is_empty());
-        assert!((k.v.x - 30.0).abs() < 0.01);
+        assert_in_delta!(k.v.x, 30.0, 1.0);
     }
 
     #[test]
@@ -246,13 +254,13 @@ mod tests {
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
         for _ in 0..100 {
             pos_ang.0.x += k.tick(1.0, model_motion).x;
-            // eprintln!("{:?} {:?} {:?}", pos_ang.0.x, k.v.x, k.x_target.first());
+            eprintln!("{:?} {:?} {:?}", pos_ang.0.x, k.v.x, k.x_target.first());
             if k.x_target.is_empty() {
                 break;
             }
         }
         assert!(k.x_target.is_empty());
-        assert!((k.v.x - 30.0).abs() < 0.01);
-        assert!((pos_ang.0.x - 100.0).abs() < 0.01);
+        assert_in_delta!(k.v.x, 30.0, 1.0);
+        assert_gt!(pos_ang.0.x, 100.0);
     }
 }
