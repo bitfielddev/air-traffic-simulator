@@ -33,7 +33,7 @@ impl Target {
             (Some(v), Some(ds), None) => {
                 let max_v = max_v.copysign(ds);
                 let accelerate_a = max_a.copysign(max_v - u);
-                let decelerate_a = max_a.copysign(v - max_v);
+                let decelerate_a = max_a.copysign(-accelerate_a);
                 let max_accelerate_ds = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
                 let max_decelerate_ds = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
                 if ds.abs() > (max_accelerate_ds + max_decelerate_ds).abs() {
@@ -258,7 +258,7 @@ mod tests {
             turning_radius: 0.0,
         };
         let mut k = Kinematics::default();
-        k.target_x(Some(30.0), Some(100.0), None, model_motion);
+        k.target_x(Some(30.0), Some(50.0), None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {
@@ -270,6 +270,6 @@ mod tests {
         }
         assert!(k.x_target.is_empty());
         assert_in_delta!(k.v.x, 30.0, 1.0);
-        assert_gt!(pos_ang.0.x, 100.0);
+        assert_gt!(pos_ang.0.x, 50.0);
     }
 }
