@@ -109,7 +109,7 @@ impl Kinematics {
                 }
                 let dt_used = x_target.t.min(dt_left);
                 self.v.x += (dt_used * x_target.a);
-                dsx += self.v.x * dt;
+                dsx += self.v.x * dt_used;
 
                 x_target.t -= dt_used;
                 dt_left -= dt_used;
@@ -134,7 +134,7 @@ impl Kinematics {
                 }
                 let dt_used = y_target.t.min(dt_left);
                 self.v.y += (dt_used * y_target.a);
-                dsy += self.v.y * dt;
+                dsy += self.v.y * dt_used;
 
                 y_target.t -= dt_used;
                 dt_left -= dt_used;
