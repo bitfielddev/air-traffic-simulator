@@ -44,7 +44,7 @@ pub enum FlightInstruction {
 
 impl PlanePos {
     pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) {
-        let ds = self.kinematics.tick(dt, self.pos_ang, model_motion);
+        let ds = self.kinematics.tick(dt, model_motion);
 
         let xz = self.planner.tick(ds.x, self.pos_ang.to_2(), model_motion);
         self.pos_ang = Pos3Angle(xz.0.extend(self.pos_ang.0.z + ds.y), xz.1);
@@ -140,11 +140,8 @@ mod tests {
         let mut plane_pos = PlanePos {
             pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
             kinematics: Kinematics {
-                target_sz: None,
-                target_vxy: None,
-                target_sxy: None,
-                a: Vec2::default(),
                 v: Vec2::new(1.0, 0.0),
+                ..Default::default()
             },
             planner: FlightPlanner {
                 instructions: VecDeque::new(),
@@ -180,11 +177,8 @@ mod tests {
         let mut plane_pos = PlanePos {
             pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),
             kinematics: Kinematics {
-                target_sz: None,
-                target_vxy: None,
-                target_sxy: None,
-                a: Vec2::default(),
                 v: Vec2::new(1.0, 0.0),
+                ..Default::default()
             },
             planner: FlightPlanner {
                 instructions: VecDeque::from([

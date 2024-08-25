@@ -42,7 +42,7 @@ impl Plane {
                     Angle((runway.end - runway.start).to_angle()),
                 ),
                 kinematics: Kinematics {
-                    target_vxy: Some(50.0),
+                    //target_vxy: Some(50.0),
                     ..Kinematics::default()
                 },
                 planner: FlightPlanner {
@@ -77,7 +77,7 @@ impl Plane {
                 let runway_progress =
                     plane_pos.distance(runway.start) / runway.end.distance(runway.start);
                 (runway_progress >= 0.75).then(|| {
-                    self.pos.kinematics.target_sz = Some(512.0);
+                    // self.pos.kinematics.target_sz = Some(512.0); TODO
                     PhaseData::Cruise
                 })
             }
@@ -109,7 +109,7 @@ impl Plane {
                         ),
                         FlightInstruction::Straight(landing_runway.ray()),
                     ]);
-                    self.pos.kinematics.target_sz = Some(landing_runway.altitude);
+                    // self.pos.kinematics.target_sz = Some(landing_runway.altitude); TODO
                     PhaseData::Landing {
                         runway: landing_runway,
                     }
