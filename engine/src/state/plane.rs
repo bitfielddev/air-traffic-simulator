@@ -237,10 +237,11 @@ mod tests {
             if state.planes.is_empty() {
                 break;
             }
-            eprintln!(
-                "{:?}\n{:?}\n{:?}\n",
-                state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
-            );
+            // eprintln!(
+            //     "{:?}\n{:?}\n{:?}\n",
+            //     state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
+            // );
+            // eprintln!("{} {} {}", state.planes[0].pos.pos_ang.0.x, state.planes[0].pos.pos_ang.0.y, state.planes[0].pos.pos_ang.0.z);
         }
     }
 }
