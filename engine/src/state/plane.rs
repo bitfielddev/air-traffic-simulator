@@ -161,7 +161,10 @@ impl Plane {
                     self.model.motion,
                 );
                 self.pos.kinematics.x_target.push(Target {
-                    a: (1.0 - (self.model.motion.max_v.x / 2.0).powi(2)) / touchdown_length / 2.0,
+                    a: (self.model.motion.max_v.x / 2.0)
+                        .mul_add(-(self.model.motion.max_v.x / 2.0), 1.0)
+                        / touchdown_length
+                        / 2.0,
                     dt: 2.0 * touchdown_length / (1.0 + self.model.motion.max_v.x / 2.0),
                 }); // TODO
                 PhaseData::Landing {

@@ -72,7 +72,7 @@ impl Target {
             (Some(v), Some(ds), None) => {
                 let max_v = max_v.copysign(ds);
                 let accelerate_a = max_a.copysign(max_v - u);
-                let decelerate_a = max_a.copysign(-accelerate_a);
+                let decelerate_a = max_a.copysign(v - max_v);
                 let max_accelerate_ds = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
                 let max_decelerate_ds = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
                 if (max_accelerate_ds + max_decelerate_ds > -0.0
@@ -218,7 +218,7 @@ impl Kinematics {
         ));
         &self.y_target
     }
-    pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) -> Vec2 {
+    pub fn tick(&mut self, dt: f32, _model_motion: ModelMotion) -> Vec2 {
         let x = if self.x_target.is_empty() {
             self.v.x * dt
         } else {
