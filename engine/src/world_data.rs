@@ -20,7 +20,7 @@ use crate::{
     },
 };
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WorldData {
     pub classes: Arc<[Arc<[Class]>]>,
     pub airports: Arc<[Arc<AirportData>]>,

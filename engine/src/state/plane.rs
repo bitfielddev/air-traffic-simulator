@@ -38,7 +38,7 @@ impl Plane {
         model: &Arc<PlaneData>,
         flight: &Arc<Flight>,
         runway: &Arc<Runway>,
-        wd: Option<&WorldData>,
+        wd: &WorldData,
     ) -> Self {
         let pos_ang = Pos3Angle(
             runway.start3(),
@@ -51,12 +51,10 @@ impl Plane {
                 kinematics: Kinematics::default(),
                 planner: FlightPlanner::new(
                     VecDeque::from([FlightInstruction::Straight(runway.ray())]),
-                    wd.map_or_else(VecDeque::new, |wd| {
-                        wd.find_waypoint_route(
-                            pos_ang.to_2(),
-                            wd.airport(&flight.to).map_or(Pos2::ZERO, |a| a.centre()),
-                        )
-                    }),
+                    wd.find_waypoint_route(
+                        pos_ang.to_2(),
+                        wd.airport(&flight.to).map_or(Pos2::ZERO, |a| a.centre()),
+                    ),
                 ), // TODO
             },
             model: Arc::clone(model),
@@ -254,14 +252,14 @@ mod tests {
                 ..Flight::default()
             }),
             &runway,
-            None,
+            &WorldData::default(),
         ));
         let config = Config {
             tick_duration: 1.0,
             plane_spawn_chance: 0.0,
         };
         for _ in 0..100 {
-            state.tick(&config);
+            state.tick(&config, &WorldData::default());
             if state.planes.is_empty() {
                 break;
             }
@@ -300,7 +298,7 @@ mod tests {
                 ..Flight::default()
             }),
             &runway,
-            None,
+            &WorldData::default(),
         ));
         state.planes[0]
             .pos
@@ -325,7 +323,7 @@ mod tests {
             plane_spawn_chance: 0.0,
         };
         for _ in 0..250 {
-            state.tick(&config);
+            state.tick(&config, &WorldData::default());
             if state.planes.is_empty() {
                 break;
             }
@@ -381,14 +379,14 @@ mod tests {
                 ..Flight::default()
             }),
             &runway,
-            Some(&wd),
+            &wd,
         ));
         let config = Config {
             tick_duration: 0.25,
             plane_spawn_chance: 0.0,
         };
         for _ in 0..250 {
-            state.tick(&config);
+            state.tick(&config, &wd);
             if state.planes.is_empty() {
                 break;
             }
