@@ -16,6 +16,7 @@ use crate::{
         angle::Angle,
         kinematics::{Kinematics, Target},
         pos::{Pos2Angle, Pos3Angle},
+        ray::Ray,
         AirportStateId, PlaneStateId,
     },
     world_data::{Flight, PlaneData, Runway},
@@ -112,11 +113,15 @@ impl Plane {
                 PhaseData::Descent
             }),
             PhaseData::Descent => landing_runway.map(|landing_runway| {
+                let landing_ray = Ray {
+                    tail: landing_runway.start - landing_runway.ray().vec,
+                    vec: landing_runway.ray().vec * 2.0,
+                };
                 let dubins = FlightInstruction::Dubins(
                     DubinsPath::shortest_from(
                         self.pos.pos_ang.to_2().into(),
                         Pos2Angle(
-                            landing_runway.start,
+                            landing_ray.tail,
                             Angle((landing_runway.end - landing_runway.start).to_angle()),
                         )
                         .into(),
@@ -124,19 +129,18 @@ impl Plane {
                     )
                     .unwrap(),
                 );
-                let straight = FlightInstruction::Straight(landing_runway.ray());
-                let straight_len = straight.length();
+                let straight = FlightInstruction::Straight(landing_ray);
+                let touchdown_length = landing_runway.len() / 3.0 * 4.0;
                 self.pos.planner.instructions.extend([dubins, straight]);
 
-                let ds = (straight_len / 4.0).mul_add(
-                    -3.0,
-                    self.pos
-                        .planner
-                        .instructions
-                        .iter()
-                        .map(FlightInstruction::length)
-                        .sum::<f32>(),
-                );
+                let ds = self
+                    .pos
+                    .planner
+                    .instructions
+                    .iter()
+                    .map(FlightInstruction::length)
+                    .sum::<f32>()
+                    - touchdown_length;
                 let dt = Target::sum_t(
                     self.pos
                         .kinematics
@@ -157,10 +161,8 @@ impl Plane {
                     self.model.motion,
                 );
                 self.pos.kinematics.x_target.push(Target {
-                    a: (1.0 - (self.model.motion.max_v.x / 2.0).powi(2))
-                        / (straight_len / 4.0 * 3.0)
-                        / 2.0,
-                    dt: 2.0 * (straight_len / 4.0 * 3.0) / (1.0 + self.model.motion.max_v.x / 2.0),
+                    a: (1.0 - (self.model.motion.max_v.x / 2.0).powi(2)) / touchdown_length / 2.0,
+                    dt: 2.0 * touchdown_length / (1.0 + self.model.motion.max_v.x / 2.0),
                 }); // TODO
                 PhaseData::Landing {
                     runway: landing_runway,
