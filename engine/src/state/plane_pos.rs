@@ -53,9 +53,10 @@ impl PlanePos {
 
 impl FlightPlanner {
     #[must_use]
-    pub fn new(instructions: VecDeque<FlightInstruction>) -> Self {
+    pub fn new(instructions: VecDeque<FlightInstruction>, route: VecDeque<Arc<Waypoint>>) -> Self {
         Self {
             instructions,
+            route,
             ..Default::default()
         }
     }
@@ -152,9 +153,9 @@ mod tests {
                 v: Vec2::new(1.0, 0.0),
                 ..Default::default()
             },
-            planner: FlightPlanner {
-                instructions: VecDeque::new(),
-                route: VecDeque::from([
+            planner: FlightPlanner::new(
+                VecDeque::new(),
+                VecDeque::from([
                     Arc::new(Waypoint {
                         name: WaypointId::default(),
                         pos: Pos2::new(10.0, 0.0),
@@ -164,8 +165,7 @@ mod tests {
                         pos: Pos2::new(10.0, 10.0),
                     }),
                 ]),
-                ..Default::default()
-            },
+            ),
         };
         let model_motion = ModelMotion {
             max_a: Vec2::INFINITY,
@@ -195,14 +195,17 @@ mod tests {
                 v: Vec2::new(1.0, 0.0),
                 ..Default::default()
             },
-            planner: FlightPlanner::new(VecDeque::from([
-                FlightInstruction::Straight(Ray::new(Pos2::ZERO, Pos2::new(10.0, 0.0))),
-                FlightInstruction::Turn {
-                    origin: Pos2Angle(Pos2::new(10.0, 0.0), Angle(0.0)),
-                    radius: 2.0,
-                    angle: Angle(PI),
-                },
-            ])),
+            planner: FlightPlanner::new(
+                VecDeque::from([
+                    FlightInstruction::Straight(Ray::new(Pos2::ZERO, Pos2::new(10.0, 0.0))),
+                    FlightInstruction::Turn {
+                        origin: Pos2Angle(Pos2::new(10.0, 0.0), Angle(0.0)),
+                        radius: 2.0,
+                        angle: Angle(PI),
+                    },
+                ]),
+                VecDeque::new(),
+            ),
         };
         let model_motion = ModelMotion {
             max_a: Vec2::INFINITY,

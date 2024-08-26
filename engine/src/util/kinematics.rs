@@ -40,21 +40,34 @@ impl Target {
                     ))
                 .sqrt();
                 let w = 2.0f32.mul_add(ds, common.copysign(ds)) / (2.0 * dt);
-                if w < -max_v {
-                    todo!("vst {w}")
-                } else if w > max_v {
-                    todo!("vst {w}")
-                } else {
-                    let a = dt.mul_add(-v, dt.mul_add(-u, 2.0f32.mul_add(ds, common.copysign(ds))))
-                        / dt.powi(2);
-                    vec![
-                        Self { a, dt: (w - u) / a },
-                        Self {
-                            a: -a,
-                            dt: (v - w) / (-a),
-                        },
-                    ]
-                }
+                // if w < -max_v || w > max_v {
+                //     let max_v = max_v.copysign(w);
+                //     // https://www.wolframalpha.com/input?i=s%3D0.5%28u%2Bw%29%28w-u%29%2Fa+%2B+wn+%2B+0.5%28w%2Bv%29%28v-w%29%2F%28-a%29%3B+t%3D%28w-u%29%2Fa%2B%28v-w%29%2F%28-a%29%2Bn+solve+for+a
+                //     let a = ((u.powi(2)-2.0*u*max_v+v.powi(2)-2.0*v*max_v+2.0*max_v.powi(2))/(2.0*dt*max_v-2.0*ds)).copysign(ds);
+                //     let accelerate_dt = (max_v - u) / a;
+                //     let decelerate_dt = (v - max_v) / (-a);
+                //     let constant_dt = dt - accelerate_dt - decelerate_dt;
+                //     vec![
+                //         Self { a, dt: accelerate_dt },
+                //         Self {
+                //             a: 0.0, dt: constant_dt
+                //         },
+                //         Self {
+                //             a: -a,
+                //             dt: decelerate_dt,
+                //         },
+                //     ]
+                // } else {
+                let a = dt.mul_add(-v, dt.mul_add(-u, 2.0f32.mul_add(ds, common.copysign(ds))))
+                    / dt.powi(2);
+                vec![
+                    Self { a, dt: (w - u) / a },
+                    Self {
+                        a: -a,
+                        dt: (v - w) / (-a),
+                    },
+                ]
+                // }
             }
             (Some(v), Some(ds), None) => {
                 let max_v = max_v.copysign(ds);
@@ -138,13 +151,14 @@ impl Kinematics {
         v: Option<f32>,
         ds: Option<f32>,
         dt: Option<f32>,
+        max_v: Option<f32>,
         model_motion: ModelMotion,
     ) -> &Vec<Target> {
         self.x_target = Target::new(
             v,
             ds,
             dt,
-            model_motion.max_v.x,
+            max_v.unwrap_or(model_motion.max_v.x),
             model_motion.max_a.x,
             self.v.x,
         );
@@ -155,13 +169,14 @@ impl Kinematics {
         v: Option<f32>,
         ds: Option<f32>,
         dt: Option<f32>,
+        max_v: Option<f32>,
         model_motion: ModelMotion,
     ) -> &Vec<Target> {
         self.x_target.extend(Target::new(
             v,
             ds,
             dt,
-            model_motion.max_v.x,
+            max_v.unwrap_or(model_motion.max_v.x),
             model_motion.max_a.x,
             self.v.x,
         ));
@@ -172,13 +187,14 @@ impl Kinematics {
         v: Option<f32>,
         ds: Option<f32>,
         dt: Option<f32>,
+        max_v: Option<f32>,
         model_motion: ModelMotion,
     ) -> &Vec<Target> {
         self.y_target = Target::new(
             v,
             ds,
             dt,
-            model_motion.max_v.y,
+            max_v.unwrap_or(model_motion.max_v.y),
             model_motion.max_a.y,
             self.v.y,
         );
@@ -189,13 +205,14 @@ impl Kinematics {
         v: Option<f32>,
         ds: Option<f32>,
         dt: Option<f32>,
+        max_v: Option<f32>,
         model_motion: ModelMotion,
     ) -> &Vec<Target> {
         self.y_target.extend(Target::new(
             v,
             ds,
             dt,
-            model_motion.max_v.y,
+            max_v.unwrap_or(model_motion.max_v.y),
             model_motion.max_a.y,
             self.v.y,
         ));
@@ -213,9 +230,8 @@ impl Kinematics {
                 }
                 let dt_used = x_target.dt.min(dt_left);
                 let old_v = self.v.x;
-                self.v.x = dt_used
-                    .mul_add(x_target.a, self.v.x)
-                    .clamp(-model_motion.max_v.x, model_motion.max_v.x);
+                self.v.x = dt_used.mul_add(x_target.a, self.v.x);
+                // .clamp(-model_motion.max_v.x, model_motion.max_v.x);
                 dsx += 0.5 * (old_v + self.v.x) * dt_used;
 
                 x_target.dt -= dt_used;
@@ -241,9 +257,8 @@ impl Kinematics {
                 }
                 let dt_used = y_target.dt.min(dt_left);
                 let old_v = self.v.y;
-                self.v.y = dt_used
-                    .mul_add(y_target.a, self.v.y)
-                    .clamp(-model_motion.max_v.y, model_motion.max_v.y);
+                self.v.y = dt_used.mul_add(y_target.a, self.v.y);
+                // .clamp(-model_motion.max_v.y, model_motion.max_v.y);
                 dsy += 0.5 * (old_v + self.v.y) * dt_used;
 
                 y_target.dt -= dt_used;
@@ -279,7 +294,7 @@ mod tests {
             turning_radius: 0.0,
         };
         let mut k = Kinematics::default();
-        k.target_y(Some(0.0), Some(123.0), None, model_motion);
+        k.target_y(Some(0.0), Some(123.0), None, None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {
@@ -301,7 +316,7 @@ mod tests {
             turning_radius: 0.0,
         };
         let mut k = Kinematics::default();
-        k.target_x(Some(30.0), None, None, model_motion);
+        k.target_x(Some(30.0), None, None, None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {
@@ -323,7 +338,7 @@ mod tests {
             turning_radius: 0.0,
         };
         let mut k = Kinematics::default();
-        k.target_x(Some(10.0), Some(50.0), None, model_motion);
+        k.target_x(Some(10.0), Some(50.0), None, None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {

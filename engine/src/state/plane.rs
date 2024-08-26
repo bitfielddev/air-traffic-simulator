@@ -42,9 +42,10 @@ impl Plane {
                     Angle((runway.end - runway.start).to_angle()),
                 ),
                 kinematics: Kinematics::default(),
-                planner: FlightPlanner::new(VecDeque::from([FlightInstruction::Straight(
-                    runway.ray(),
-                )])),
+                planner: FlightPlanner::new(
+                    VecDeque::from([FlightInstruction::Straight(runway.ray())]),
+                    VecDeque::from([]),
+                ), // TODO
             },
             model: Arc::clone(model),
             flight: Arc::clone(flight),
@@ -53,9 +54,13 @@ impl Plane {
                 runway: Arc::clone(runway),
             },
         };
-        s.pos
-            .kinematics
-            .target_x(Some(s.model.motion.max_v.x), None, None, s.model.motion);
+        s.pos.kinematics.target_x(
+            Some(s.model.motion.max_v.x),
+            None,
+            None,
+            None,
+            s.model.motion,
+        );
         s
     }
     pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
@@ -81,12 +86,15 @@ impl Plane {
                         Some(0.0),
                         Some(512.0 - self.pos.pos_ang.0.z),
                         None,
+                        None,
                         self.model.motion,
                     );
                     PhaseData::Cruise
                 })
             }
-            PhaseData::Cruise => self.pos.planner.route.is_empty().then(|| {
+            PhaseData::Cruise => (self.pos.planner.route.is_empty()
+                && self.pos.planner.instructions.is_empty())
+            .then(|| {
                 send.push((
                     self.flight.to.clone(),
                     AirportEvent {
@@ -96,6 +104,7 @@ impl Plane {
                 ));
                 self.pos.kinematics.target_x(
                     Some(self.model.motion.max_v.x / 2.0),
+                    None,
                     None,
                     None,
                     self.model.motion,
@@ -135,6 +144,7 @@ impl Plane {
                             Some(self.model.motion.max_v.x / 2.0),
                             Some(ds),
                             None,
+                            None,
                             self.model.motion,
                         )
                         .iter(),
@@ -143,14 +153,15 @@ impl Plane {
                     Some(0.0),
                     Some(landing_runway.altitude - self.pos.pos_ang.0.z),
                     Some(dt),
-                    self.model.motion,
-                );
-                self.pos.kinematics.add_target_x(
-                    Some(1.0),
-                    Some(straight_len / 4.0 * 3.0),
                     None,
                     self.model.motion,
                 );
+                self.pos.kinematics.x_target.push(Target {
+                    a: (1.0 - (self.model.motion.max_v.x / 2.0).powi(2))
+                        / (straight_len / 4.0 * 3.0)
+                        / 2.0,
+                    dt: 2.0 * (straight_len / 4.0 * 3.0) / (1.0 + self.model.motion.max_v.x / 2.0),
+                }); // TODO
                 PhaseData::Landing {
                     runway: landing_runway,
                 }
@@ -196,8 +207,8 @@ mod tests {
     use super::*;
     use crate::{
         state::{airport::Airport, State},
-        util::Pos2,
-        world_data::{AirportData, Flight, ModelMotion, PlaneData, Runway},
+        util::{Pos2, WaypointId},
+        world_data::{AirportData, Flight, ModelMotion, PlaneData, Runway, Waypoint},
     };
 
     #[test]
@@ -242,6 +253,72 @@ mod tests {
             //     state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
             // );
             // eprintln!("{} {} {}", state.planes[0].pos.pos_ang.0.x, state.planes[0].pos.pos_ang.0.y, state.planes[0].pos.pos_ang.0.z);
+        }
+    }
+
+    #[test]
+    fn two_waypoints() {
+        let mut state = State::new(&[]);
+        let runway = Arc::new(Runway {
+            start: Pos2::ZERO,
+            end: Pos2::new(50.0, 0.0),
+            ..Runway::default()
+        });
+        state.airports.push(Airport::new(Arc::new(AirportData {
+            code: "ABC".into(),
+            runways: Arc::new([Arc::clone(&runway)]),
+            ..AirportData::default()
+        })));
+        state.planes.push(Plane::new(
+            &Arc::new(PlaneData {
+                motion: ModelMotion {
+                    max_a: Vec2::new(5.0, 2.5),
+                    max_v: Vec2::new(50.0, 10.0),
+                    turning_radius: 50.0,
+                },
+                ..PlaneData::default()
+            }),
+            &Arc::new(Flight {
+                to: "ABC".into(),
+                ..Flight::default()
+            }),
+            &runway,
+        ));
+        state.planes[0]
+            .pos
+            .planner
+            .route
+            .push_back(Arc::new(Waypoint {
+                name: WaypointId::default(),
+                pos: Pos2::new(50.0, -100.0),
+            }));
+        state.planes[0]
+            .pos
+            .planner
+            .route
+            .push_back(Arc::new(Waypoint {
+                name: WaypointId::default(),
+                pos: Pos2::new(150.0, 100.0),
+            }));
+        let config = Config {
+            tick_duration: 0.25,
+            plane_spawn_chance: 0.0,
+        };
+        for _ in 0..250 {
+            state.tick(&config);
+            if state.planes.is_empty() {
+                break;
+            }
+            // eprintln!(
+            //     "{:?}\n{:?}\n{:?}\n",
+            //     state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
+            // );
+            eprintln!(
+                "{} {} {}",
+                state.planes[0].pos.pos_ang.0.x,
+                state.planes[0].pos.pos_ang.0.y,
+                state.planes[0].pos.pos_ang.0.z
+            );
         }
     }
 }
