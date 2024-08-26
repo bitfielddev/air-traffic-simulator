@@ -6,6 +6,7 @@ use rand::{prelude::*, Rng};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+use tracing::{debug, info, trace};
 
 use crate::{
     config::Config,
@@ -49,6 +50,7 @@ impl State {
     pub fn airport_mut(&mut self, id: &PlaneStateId) -> Option<&mut Airport> {
         self.airports.iter_mut().find(|a| a.id == *id)
     }
+    #[tracing::instrument(skip_all)]
     pub fn tick(&mut self, config: &Config, wd: &WorldData) {
         let mut remove_list = vec![];
         for (id, (remove, send)) in self
@@ -58,10 +60,12 @@ impl State {
             .collect::<Vec<_>>()
         {
             if remove {
+                info!(%id, "Removing plane");
                 remove_list.push(id);
             }
             for (airport, event) in send {
                 if let Some(airport) = self.airport_mut(&airport) {
+                    debug!(?event, to=%airport.id, "Sending airport event");
                     airport.events.push_back(event);
                 }
             }
@@ -76,6 +80,7 @@ impl State {
         {
             for (plane, event) in send {
                 if let Some(plane) = self.plane_mut(&plane) {
+                    debug!(?event, to=%plane.id, "Sending plane event");
                     plane.events.push_back(event);
                 }
             }
@@ -112,7 +117,9 @@ impl State {
                 .runways
                 .choose(&mut thread_rng())
                 .unwrap();
-            self.planes.push(Plane::new(plane, flight, runway, wd))
+            let plane = Plane::new(plane, flight, runway, wd);
+            info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");
+            self.planes.push(plane);
         }
     }
 }

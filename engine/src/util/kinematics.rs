@@ -1,5 +1,6 @@
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
+use tracing::{trace, warn};
 
 use crate::world_data::ModelMotion;
 
@@ -134,7 +135,7 @@ impl Target {
                 todo!("s")
             }
             (None, None, _) => {
-                // TODO warn
+                warn!("Invalid target parameters");
                 vec![]
             }
         }
@@ -146,6 +147,7 @@ impl Target {
 }
 
 impl Kinematics {
+    #[tracing::instrument(skip(self, model_motion))]
     pub fn target_x(
         &mut self,
         v: Option<f32>,
@@ -162,8 +164,10 @@ impl Kinematics {
             model_motion.max_a.x,
             self.v.x,
         );
+        trace!(?self.x_target, "Setting horizontal target");
         &self.x_target
     }
+    #[tracing::instrument(skip(self, model_motion))]
     pub fn add_target_x(
         &mut self,
         v: Option<f32>,
@@ -180,8 +184,10 @@ impl Kinematics {
             model_motion.max_a.x,
             self.v.x,
         ));
+        trace!(?self.x_target, "Appending horizontal target");
         &self.x_target
     }
+    #[tracing::instrument(skip(self, model_motion))]
     pub fn target_y(
         &mut self,
         v: Option<f32>,
@@ -198,8 +204,10 @@ impl Kinematics {
             model_motion.max_a.y,
             self.v.y,
         );
+        trace!(?self.y_target, "Setting vertical target");
         &self.y_target
     }
+    #[tracing::instrument(skip(self, model_motion))]
     pub fn add_target_y(
         &mut self,
         v: Option<f32>,
@@ -216,8 +224,10 @@ impl Kinematics {
             model_motion.max_a.y,
             self.v.y,
         ));
+        trace!(?self.y_target, "Appending vertical target");
         &self.y_target
     }
+    #[tracing::instrument(skip(self, _model_motion))]
     pub fn tick(&mut self, dt: f32, _model_motion: ModelMotion) -> Vec2 {
         let x = if self.x_target.is_empty() {
             self.v.x * dt
@@ -237,6 +247,7 @@ impl Kinematics {
                 x_target.dt -= dt_used;
                 dt_left -= dt_used;
                 if x_target.dt <= 0.0 {
+                    trace!(x_target.a, "Completed horizontal acceleration");
                     self.x_target.remove(0);
                 }
             }
@@ -264,6 +275,7 @@ impl Kinematics {
                 y_target.dt -= dt_used;
                 dt_left -= dt_used;
                 if y_target.dt <= 0.0 {
+                    trace!(y_target.a, "Completed vertical acceleration");
                     self.y_target.remove(0);
                 }
             }

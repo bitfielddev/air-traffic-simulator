@@ -10,6 +10,7 @@ use glam::Vec2;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
+use tracing::{trace, warn};
 
 use crate::{
     state::airport::Airport,
@@ -163,6 +164,7 @@ pub struct Waypoint {
 }
 
 impl WorldData {
+    #[tracing::instrument(skip(self))]
     pub fn find_waypoint_route(&self, from: Pos2Angle, to: Pos2) -> VecDeque<Arc<Waypoint>> {
         let Some((from_waypoint, _)) = self
             .waypoints
@@ -187,6 +189,7 @@ impl WorldData {
         else {
             return VecDeque::new();
         };
+        trace!(?from_waypoint, ?to_waypoint);
 
         let h = |w: &Arc<Waypoint>| w.pos.distance(to_waypoint.pos);
         let mut came_from = HashMap::<&WaypointId, &Arc<Waypoint>>::new();
@@ -205,6 +208,7 @@ impl WorldData {
                     current = new_current;
                     total_path.push_front(Arc::clone(current));
                 }
+                trace!(?total_path, "Found path");
                 return total_path;
             }
             f_score.remove(&current.name);
@@ -223,7 +227,7 @@ impl WorldData {
             }
         }
 
-        // TODO cannot find path
+        warn!("Cannot find path");
         VecDeque::new()
     }
 }

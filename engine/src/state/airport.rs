@@ -1,5 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
+use rand::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -35,7 +36,7 @@ impl Airport {
                         PlaneEvent {
                             from: self.id.clone(),
                             payload: PlaneEventPayload::ClearForLanding(Arc::clone(
-                                &self.airport.runways[0],
+                                &self.airport.runways.choose(&mut thread_rng()).unwrap(),
                             )),
                         },
                     ));

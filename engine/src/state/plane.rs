@@ -4,6 +4,7 @@ use dubins_paths::DubinsPath;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::{
@@ -55,7 +56,7 @@ impl Plane {
                         pos_ang.to_2(),
                         wd.airport(&flight.to).map_or(Pos2::ZERO, |a| a.centre()),
                     ),
-                ), // TODO
+                ),
             },
             model: Arc::clone(model),
             flight: Arc::clone(flight),
@@ -73,6 +74,7 @@ impl Plane {
         );
         s
     }
+    #[tracing::instrument(skip_all, fields(%self.id, %self.model.id, %self.flight.code, %self.flight.from, %self.flight.to))]
     pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
         let mut remove = false;
         let mut send = vec![];
@@ -187,6 +189,7 @@ impl Plane {
                 None
             }
         } {
+            info!(phase=?new_phase.str(), "Changing phase");
             self.phase = new_phase;
         }
         self.pos.tick(config.tick_duration, self.model.motion);
@@ -200,6 +203,18 @@ pub enum PhaseData {
     Cruise,
     Descent,
     Landing { runway: Arc<Runway> },
+}
+
+impl PhaseData {
+    #[must_use]
+    pub fn str(&self) -> &'static str {
+        match self {
+            Self::Takeoff { .. } => "Takeoff",
+            Self::Cruise => "Cruise",
+            Self::Descent => "Descent",
+            Self::Landing { .. } => "Landing",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

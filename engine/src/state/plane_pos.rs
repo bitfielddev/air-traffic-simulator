@@ -3,6 +3,7 @@ use std::{collections::VecDeque, sync::Arc};
 use dubins_paths::DubinsPath;
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
+use tracing::{debug, info, trace};
 
 use crate::{
     util::{
@@ -60,9 +61,11 @@ impl FlightPlanner {
             ..Default::default()
         }
     }
+    #[tracing::instrument(skip(model_motion))]
     pub fn tick(&mut self, dsx: f32, pos_ang: Pos2Angle, model_motion: ModelMotion) -> Pos2Angle {
         if self.instructions.is_empty() {
             if let Some(waypoint) = self.route.pop_front() {
+                debug!(?waypoint.name, "Planning new instructions");
                 let waypoint_pos_ang =
                     Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0).to_angle()));
                 let path = DubinsPath::shortest_from(
@@ -74,6 +77,7 @@ impl FlightPlanner {
                 self.instructions.push_back(FlightInstruction::Dubins(path));
                 self.past_route.push(waypoint);
             } else {
+                trace!("Lost");
                 return Pos2Angle(pos_ang.0 + pos_ang.1.vec() * dsx, pos_ang.1);
             }
         }
