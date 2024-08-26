@@ -3,7 +3,7 @@ use std::{collections::VecDeque, sync::Arc};
 use dubins_paths::DubinsPath;
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info, trace};
+use tracing::{debug, trace};
 
 use crate::{
     util::{

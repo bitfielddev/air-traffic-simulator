@@ -207,7 +207,7 @@ pub enum PhaseData {
 
 impl PhaseData {
     #[must_use]
-    pub fn str(&self) -> &'static str {
+    pub const fn str(&self) -> &'static str {
         match self {
             Self::Takeoff { .. } => "Takeoff",
             Self::Cruise => "Cruise",

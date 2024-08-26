@@ -1,4 +1,4 @@
-use std::{cmp::Ordering, sync::Arc};
+use std::sync::Arc;
 
 use airport::Airport;
 use plane::Plane;
@@ -6,7 +6,7 @@ use rand::{prelude::*, Rng};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
-use tracing::{debug, info, trace};
+use tracing::{debug, info};
 
 use crate::{
     config::Config,
@@ -88,6 +88,7 @@ impl State {
 
         if thread_rng().gen_range(0.0..=1.0) < config.plane_spawn_chance {
             let plane = wd.planes.choose(&mut thread_rng()).unwrap();
+            #[expect(clippy::option_if_let_else)]
             let flight = if let Some(flights) = &wd.flights {
                 flights.choose(&mut thread_rng()).unwrap()
             } else {
@@ -95,19 +96,9 @@ impl State {
                 &Arc::new(Flight {
                     airline: SmolStr::default(),
                     code: FlightCode::default(),
-                    from: wd
-                        .airports
-                        .choose(&mut thread_rng())
-                        .unwrap()
-                        .code
-                        .to_owned(),
-                    to: wd
-                        .airports
-                        .choose(&mut thread_rng())
-                        .unwrap()
-                        .code
-                        .to_owned(),
-                    plane: Arc::new([plane.id.to_owned()]),
+                    from: wd.airports.choose(&mut thread_rng()).unwrap().code.clone(),
+                    to: wd.airports.choose(&mut thread_rng()).unwrap().code.clone(),
+                    plane: Arc::new([plane.id.clone()]),
                 })
             };
             let runway = self

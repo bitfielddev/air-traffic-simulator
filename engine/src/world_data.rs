@@ -12,13 +12,8 @@ use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use tracing::{trace, warn};
 
-use crate::{
-    state::airport::Airport,
-    util::{
-        pos::{Pos2Angle, Pos3Angle},
-        ray::Ray,
-        AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId,
-    },
+use crate::util::{
+    pos::Pos2Angle, ray::Ray, AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId,
 };
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -62,6 +57,7 @@ pub struct AirportData {
 }
 
 impl AirportData {
+    #[must_use]
     pub fn centre(&self) -> Pos2 {
         self.runways
             .iter()
@@ -194,7 +190,7 @@ impl WorldData {
         let h = |w: &Arc<Waypoint>| w.pos.distance(to_waypoint.pos);
         let mut came_from = HashMap::<&WaypointId, &Arc<Waypoint>>::new();
         let mut g_score = HashMap::from([(&from_waypoint.name, 0.0)]);
-        let mut f_score = HashMap::from([(&from_waypoint.name, h(&from_waypoint))]);
+        let mut f_score = HashMap::from([(&from_waypoint.name, h(from_waypoint))]);
 
         while let Some((current_name, _)) = f_score
             .iter()
@@ -214,7 +210,7 @@ impl WorldData {
             f_score.remove(&current.name);
 
             for neighbour_name in current.connections.iter() {
-                let Some(neighbour) = self.waypoint(&neighbour_name) else {
+                let Some(neighbour) = self.waypoint(neighbour_name) else {
                     continue;
                 };
                 let tent_g = *g_score.get(&current.name).unwrap_or(&f32::INFINITY)

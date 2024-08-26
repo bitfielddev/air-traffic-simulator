@@ -36,7 +36,7 @@ impl Airport {
                         PlaneEvent {
                             from: self.id.clone(),
                             payload: PlaneEventPayload::ClearForLanding(Arc::clone(
-                                &self.airport.runways.choose(&mut thread_rng()).unwrap(),
+                                self.airport.runways.choose(&mut thread_rng()).unwrap(),
                             )),
                         },
                     ));
