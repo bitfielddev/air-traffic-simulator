@@ -1,5 +1,6 @@
 use std::io::Read;
 
+use axum::routing::get;
 use clap::Parser;
 use clio::Input;
 use color_eyre::{
@@ -9,6 +10,8 @@ use color_eyre::{
 use engine::engine::Engine;
 use itertools::Itertools;
 use serde::de::DeserializeOwned;
+use socketioxide::SocketIo;
+use tracing::info;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[derive(Parser)]
@@ -47,11 +50,12 @@ fn parse<T: DeserializeOwned>(mut input: Input) -> Result<T> {
 
     Err(eyre!(
         "Unrecognised error\n{}",
-        errors.iter().map(|a| format!("{a:#?}")).join("\n\n")
+        errors.iter().map(|a| format!("{a:#}")).join("\n\n")
     ))
 }
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     color_eyre::install()?;
     tracing_subscriber::registry()
         .with(EnvFilter::from_env("RUST_LOG"))
@@ -61,7 +65,27 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let world_data = parse(cli.world_data).wrap_err("World data file invalid")?;
     let config = parse(cli.config).wrap_err("Config file invalid")?;
-    let engine = Engine::new(world_data, config);
+    tokio::spawn(async move {
+        let mut engine = Engine::new(world_data, config);
+        loop {
+            let start = tokio::time::Instant::now();
+            engine.tick();
+            info!(delta=?start.elapsed());
+            tokio::time::sleep(tokio::time::Duration::from_secs(1) - start.elapsed()).await;
+        }
+    });
+    let (layer, io) = SocketIo::new_layer();
 
+    // io.ns("/", on_connect);
+    // io.ns("/custom", on_connect);
+
+    let app = axum::Router::new()
+        .route("/", get(|| async { "Hello, World!" }))
+        .layer(layer);
+
+    info!("Starting server");
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    axum::serve(listener, app).await?;
     Ok(())
 }

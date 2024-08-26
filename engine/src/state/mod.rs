@@ -86,7 +86,9 @@ impl State {
             }
         }
 
-        if thread_rng().gen_range(0.0..=1.0) < config.plane_spawn_chance {
+        if config.max_planes.map_or(true, |m| self.planes.len() < m)
+            && thread_rng().gen_range(0.0..=1.0) < config.plane_spawn_chance
+        {
             let plane = wd.planes.choose(&mut thread_rng()).unwrap();
             #[expect(clippy::option_if_let_else)]
             let flight = if let Some(flights) = &wd.flights {

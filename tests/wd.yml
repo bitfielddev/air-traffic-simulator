@@ -1,5 +1,28 @@
-classes:
+classes: [[""]]
 airports:
-flights:
+  - name: "Foo Airport"
+    code: "FOO"
+    runways:
+      - start: [0.0, 0.0]
+        end: [0.0, 100.0]
+        altitude: 0.0
+        class: ""
+  - name: "Bar Airport"
+    code: "BAR"
+    runways:
+      - start: [ 200.0, 0.0 ]
+        end: [ 200.0, 100.0 ]
+        altitude: 50.0
+        class: ""
+flights: null
 planes:
+  - id: "Test"
+    name: "Test"
+    manufacturer: "Me"
+    class: ""
+    motion:
+      max_v: [50.0, 10.0]
+      max_a: [5.0, 2.5]
+      turning_radius: 50.0
+    icon: null
 waypoints:
