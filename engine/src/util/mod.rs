@@ -14,6 +14,5 @@ pub type Pos3 = Vec3;
 pub type Class = SmolStr;
 pub type PlaneModelId = SmolStr;
 pub type WaypointId = SmolStr;
-pub type Timestamp = u64;
 pub type PlaneStateId = SmolStr;
 pub type AirportStateId = SmolStr;
