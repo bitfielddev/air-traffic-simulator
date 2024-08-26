@@ -17,6 +17,6 @@ impl Engine {
         }
     }
     pub fn tick(&mut self) {
-        self.state.tick(&self.config, &self.world)
+        self.state.tick(&self.config, &self.world);
     }
 }

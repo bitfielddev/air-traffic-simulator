@@ -272,6 +272,7 @@ mod tests {
         let config = Config {
             tick_duration: 1.0,
             plane_spawn_chance: 0.0,
+            max_planes: None,
         };
         for _ in 0..100 {
             state.tick(&config, &WorldData::default());
@@ -336,6 +337,7 @@ mod tests {
         let config = Config {
             tick_duration: 0.25,
             plane_spawn_chance: 0.0,
+            max_planes: None,
         };
         for _ in 0..250 {
             state.tick(&config, &WorldData::default());
@@ -399,6 +401,7 @@ mod tests {
         let config = Config {
             tick_duration: 0.25,
             plane_spawn_chance: 0.0,
+            max_planes: None,
         };
         for _ in 0..250 {
             state.tick(&config, &wd);
