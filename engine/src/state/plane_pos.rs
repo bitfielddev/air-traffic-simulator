@@ -187,6 +187,7 @@ mod tests {
     }
 
     #[test]
+    #[expect(clippy::float_cmp)]
     fn straight_turn() {
         let mut plane_pos = PlanePos {
             pos_ang: Pos3Angle(Pos3::ZERO, Angle(0.0)),

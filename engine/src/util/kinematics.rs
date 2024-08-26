@@ -30,17 +30,23 @@ impl Target {
             (Some(v), Some(ds), Some(dt)) => {
                 // https://www.wolframalpha.com/input?i=s%3D0.5%28u%2Bw%29%28w-u%29%2Fa+%2B+0.5%28w%2Bv%29%28v-w%29%2F%28-a%29%3B+t%3D%28w-u%29%2Fa%2B%28v-w%29%2F%28-a%29+solve+for+w
                 let common = (2.0
-                    * (2.0 * ds.powi(2) - 2.0 * ds * dt * u - 2.0 * ds * dt * v
-                        + dt.powi(2) * u.powi(2)
-                        + dt.powi(2) * v.powi(2)))
+                    * dt.powi(2).mul_add(
+                        v.powi(2),
+                        dt.powi(2).mul_add(
+                            u.powi(2),
+                            (2.0 * ds * dt)
+                                .mul_add(-v, 2.0f32.mul_add(ds.powi(2), -(2.0 * ds * dt * u))),
+                        ),
+                    ))
                 .sqrt();
-                let w = ((common.copysign(ds) + 2.0 * ds) / (2.0 * dt));
+                let w = 2.0f32.mul_add(ds, common.copysign(ds)) / (2.0 * dt);
                 if w < -max_v {
                     todo!("vst {w}")
                 } else if w > max_v {
                     todo!("vst {w}")
                 } else {
-                    let a = ((common.copysign(ds) + 2.0 * ds - dt * u - dt * v) / dt.powi(2));
+                    let a = dt.mul_add(-v, dt.mul_add(-u, 2.0f32.mul_add(ds, common.copysign(ds))))
+                        / dt.powi(2);
                     vec![
                         Self { a, dt: (w - u) / a },
                         Self {
@@ -100,10 +106,10 @@ impl Target {
                     ]
                 }
             }
-            (Some(v), None, Some(dt)) => {
+            (Some(_v), None, Some(_dt)) => {
                 todo!("vt")
             }
-            (None, Some(ds), Some(dt)) => {
+            (None, Some(_ds), Some(_dt)) => {
                 todo!("st")
             }
             (Some(v), None, None) => {
@@ -111,7 +117,7 @@ impl Target {
                 let dt = (v - u) / a;
                 vec![Self { a, dt }]
             }
-            (None, Some(ds), None) => {
+            (None, Some(_ds), None) => {
                 todo!("s")
             }
             (None, None, _) => {
@@ -121,7 +127,7 @@ impl Target {
         }
     }
     #[must_use]
-    pub fn sum_t<'a>(targets: impl Iterator<Item = &'a Self>) -> f32 {
+    pub fn sum_t<'a, I: Iterator<Item = &'a Self>>(targets: I) -> f32 {
         targets.map(|a| a.dt).sum()
     }
 }
@@ -196,7 +202,7 @@ impl Kinematics {
         &self.y_target
     }
     pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) -> Vec2 {
-        let dsx = if self.x_target.is_empty() {
+        let x = if self.x_target.is_empty() {
             self.v.x * dt
         } else {
             let mut dt_left = dt;
@@ -224,7 +230,7 @@ impl Kinematics {
                 dsx
             }
         };
-        let dsy = if self.y_target.is_empty() {
+        let y = if self.y_target.is_empty() {
             self.v.y * dt
         } else {
             let mut dt_left = dt;
@@ -253,11 +259,12 @@ impl Kinematics {
             }
         };
 
-        Vec2::new(dsx, dsy)
+        Vec2::new(x, y)
     }
 }
 
 #[cfg(test)]
+#[expect(clippy::float_cmp)]
 mod tests {
     use assertables::*;
 

@@ -119,14 +119,15 @@ impl Plane {
                 let straight_len = straight.length();
                 self.pos.planner.instructions.extend([dubins, straight]);
 
-                let ds = self
-                    .pos
-                    .planner
-                    .instructions
-                    .iter()
-                    .map(|a| a.length())
-                    .sum::<f32>()
-                    - straight_len / 4.0 * 3.0;
+                let ds = (straight_len / 4.0).mul_add(
+                    -3.0,
+                    self.pos
+                        .planner
+                        .instructions
+                        .iter()
+                        .map(FlightInstruction::length)
+                        .sum::<f32>(),
+                );
                 let dt = Target::sum_t(
                     self.pos
                         .kinematics
