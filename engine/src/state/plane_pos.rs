@@ -82,7 +82,7 @@ impl FlightPlanner {
         if let Some(sample) = instruction.sample(self.instruction_s) {
             sample
         } else {
-            let dsx2 = self.instruction_s - instruction.len();
+            let dsx2 = self.instruction_s - instruction.length();
             let pos_ang2 = instruction.end();
             self.instruction_s = 0.0;
             self.past_instructions
@@ -94,7 +94,7 @@ impl FlightPlanner {
 
 impl FlightInstruction {
     #[must_use]
-    pub fn len(&self) -> f32 {
+    pub fn length(&self) -> f32 {
         match self {
             Self::Dubins(path) => path.length(),
             Self::Straight(ray) => ray.vec.length(),
@@ -103,11 +103,11 @@ impl FlightInstruction {
     }
     #[must_use]
     pub fn end(&self) -> Pos2Angle {
-        self.sample(self.len()).unwrap()
+        self.sample(self.length()).unwrap()
     }
     #[must_use]
     pub fn sample(&self, s: f32) -> Option<Pos2Angle> {
-        if s > self.len() || s < 0.0 {
+        if s > self.length() || s < 0.0 {
             return None;
         }
         Some(match self {
@@ -126,7 +126,7 @@ impl FlightInstruction {
                 } else {
                     Rotation::Clockwise
                 }) * (*radius);
-                let rotate = *angle * s / self.len();
+                let rotate = *angle * s / self.length();
                 let pos = (origin.0 + vec) + (-vec).rotate(rotate.vec());
                 let angle = Angle(origin.1 .0 + rotate.0).clamp();
                 Pos2Angle(pos, angle)

@@ -28,7 +28,27 @@ impl Target {
     ) -> Vec<Self> {
         match (v, ds, dt) {
             (Some(v), Some(ds), Some(dt)) => {
-                todo!()
+                // https://www.wolframalpha.com/input?i=s%3D0.5%28u%2Bw%29%28w-u%29%2Fa+%2B+0.5%28w%2Bv%29%28v-w%29%2F%28-a%29%3B+t%3D%28w-u%29%2Fa%2B%28v-w%29%2F%28-a%29+solve+for+w
+                let common = (2.0
+                    * (2.0 * ds.powi(2) - 2.0 * ds * dt * u - 2.0 * ds * dt * v
+                        + dt.powi(2) * u.powi(2)
+                        + dt.powi(2) * v.powi(2)))
+                .sqrt();
+                let w = ((common.copysign(ds) + 2.0 * ds) / (2.0 * dt));
+                if w < -max_v {
+                    todo!("vst {w}")
+                } else if w > max_v {
+                    todo!("vst {w}")
+                } else {
+                    let a = ((common.copysign(ds) + 2.0 * ds - dt * u - dt * v) / dt.powi(2));
+                    vec![
+                        Self { a, dt: (w - u) / a },
+                        Self {
+                            a: -a,
+                            dt: (v - w) / (-a),
+                        },
+                    ]
+                }
             }
             (Some(v), Some(ds), None) => {
                 let max_v = max_v.copysign(ds);
@@ -36,7 +56,11 @@ impl Target {
                 let decelerate_a = max_a.copysign(-accelerate_a);
                 let max_accelerate_ds = u.mul_add(-u, max_v.powi(2)) / accelerate_a / 2.0;
                 let max_decelerate_ds = max_v.mul_add(-max_v, v.powi(2)) / decelerate_a / 2.0;
-                if ds.abs() > (max_accelerate_ds + max_decelerate_ds).abs() {
+                if (max_accelerate_ds + max_decelerate_ds > -0.0
+                    && ds > max_accelerate_ds + max_decelerate_ds)
+                    || (max_accelerate_ds + max_decelerate_ds < 0.0
+                        && ds < max_accelerate_ds + max_decelerate_ds)
+                {
                     let accelerate_dt = (max_v - u) / accelerate_a;
                     let constant_dt = (ds - max_accelerate_ds - max_decelerate_ds) / max_v;
                     let decelerate_dt = (v - max_v) / decelerate_a;
@@ -77,10 +101,10 @@ impl Target {
                 }
             }
             (Some(v), None, Some(dt)) => {
-                todo!()
+                todo!("vt")
             }
             (None, Some(ds), Some(dt)) => {
-                todo!()
+                todo!("st")
             }
             (Some(v), None, None) => {
                 let a = max_a.copysign(v - u);
@@ -88,7 +112,7 @@ impl Target {
                 vec![Self { a, dt }]
             }
             (None, Some(ds), None) => {
-                todo!()
+                todo!("s")
             }
             (None, None, _) => {
                 // TODO warn
@@ -97,8 +121,8 @@ impl Target {
         }
     }
     #[must_use]
-    pub fn sum_t(targets: Vec<Self>) -> f32 {
-        targets.iter().map(|a| a.dt).sum()
+    pub fn sum_t<'a>(targets: impl Iterator<Item = &'a Self>) -> f32 {
+        targets.map(|a| a.dt).sum()
     }
 }
 
@@ -120,6 +144,23 @@ impl Kinematics {
         );
         &self.x_target
     }
+    pub fn add_target_x(
+        &mut self,
+        v: Option<f32>,
+        ds: Option<f32>,
+        dt: Option<f32>,
+        model_motion: ModelMotion,
+    ) -> &Vec<Target> {
+        self.x_target.extend(Target::new(
+            v,
+            ds,
+            dt,
+            model_motion.max_v.x,
+            model_motion.max_a.x,
+            self.v.x,
+        ));
+        &self.x_target
+    }
     pub fn target_y(
         &mut self,
         v: Option<f32>,
@@ -137,6 +178,23 @@ impl Kinematics {
         );
         &self.y_target
     }
+    pub fn add_target_y(
+        &mut self,
+        v: Option<f32>,
+        ds: Option<f32>,
+        dt: Option<f32>,
+        model_motion: ModelMotion,
+    ) -> &Vec<Target> {
+        self.y_target.extend(Target::new(
+            v,
+            ds,
+            dt,
+            model_motion.max_v.y,
+            model_motion.max_a.y,
+            self.v.y,
+        ));
+        &self.y_target
+    }
     pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) -> Vec2 {
         let dsx = if self.x_target.is_empty() {
             self.v.x * dt
@@ -148,7 +206,7 @@ impl Kinematics {
                     break;
                 }
                 let dt_used = x_target.dt.min(dt_left);
-                let old_v = self.v.y;
+                let old_v = self.v.x;
                 self.v.x = dt_used
                     .mul_add(x_target.a, self.v.x)
                     .clamp(-model_motion.max_v.x, model_motion.max_v.x);
@@ -258,7 +316,7 @@ mod tests {
             turning_radius: 0.0,
         };
         let mut k = Kinematics::default();
-        k.target_x(Some(30.0), Some(50.0), None, model_motion);
+        k.target_x(Some(10.0), Some(50.0), None, model_motion);
         let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {
@@ -269,7 +327,7 @@ mod tests {
             }
         }
         assert!(k.x_target.is_empty());
-        assert_in_delta!(k.v.x, 30.0, 1.0);
+        assert_in_delta!(k.v.x, 10.0, 1.0);
         assert_gt!(pos_ang.0.x, 50.0);
     }
 }

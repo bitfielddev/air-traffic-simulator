@@ -14,7 +14,7 @@ use crate::{
     },
     util::{
         angle::Angle,
-        kinematics::Kinematics,
+        kinematics::{Kinematics, Target},
         pos::{Pos2Angle, Pos3Angle},
         AirportStateId, PlaneStateId,
     },
@@ -102,35 +102,58 @@ impl Plane {
                 );
                 PhaseData::Descent
             }),
-            PhaseData::Descent => {
-                landing_runway.map(|landing_runway| {
-                    self.pos.planner.instructions.extend([
-                        // TODO
-                        FlightInstruction::Dubins(
-                            DubinsPath::shortest_from(
-                                self.pos.pos_ang.to_2().into(),
-                                Pos2Angle(
-                                    landing_runway.start,
-                                    Angle((landing_runway.end - landing_runway.start).to_angle()),
-                                )
-                                .into(),
-                                self.model.motion.turning_radius,
-                            )
-                            .unwrap(),
-                        ),
-                        FlightInstruction::Straight(landing_runway.ray()),
-                    ]);
-                    self.pos.kinematics.target_y(
-                        Some(0.0),
-                        Some(landing_runway.altitude - self.pos.pos_ang.0.z),
-                        None,
-                        self.model.motion,
-                    );
-                    PhaseData::Landing {
-                        runway: landing_runway,
-                    }
-                })
-            }
+            PhaseData::Descent => landing_runway.map(|landing_runway| {
+                let dubins = FlightInstruction::Dubins(
+                    DubinsPath::shortest_from(
+                        self.pos.pos_ang.to_2().into(),
+                        Pos2Angle(
+                            landing_runway.start,
+                            Angle((landing_runway.end - landing_runway.start).to_angle()),
+                        )
+                        .into(),
+                        self.model.motion.turning_radius,
+                    )
+                    .unwrap(),
+                );
+                let straight = FlightInstruction::Straight(landing_runway.ray());
+                let straight_len = straight.length();
+                self.pos.planner.instructions.extend([dubins, straight]);
+
+                let ds = self
+                    .pos
+                    .planner
+                    .instructions
+                    .iter()
+                    .map(|a| a.length())
+                    .sum::<f32>()
+                    - straight_len / 4.0 * 3.0;
+                let dt = Target::sum_t(
+                    self.pos
+                        .kinematics
+                        .target_x(
+                            Some(self.model.motion.max_v.x / 2.0),
+                            Some(ds),
+                            None,
+                            self.model.motion,
+                        )
+                        .iter(),
+                );
+                self.pos.kinematics.target_y(
+                    Some(0.0),
+                    Some(landing_runway.altitude - self.pos.pos_ang.0.z),
+                    Some(dt),
+                    self.model.motion,
+                );
+                self.pos.kinematics.add_target_x(
+                    Some(1.0),
+                    Some(straight_len / 4.0 * 3.0),
+                    None,
+                    self.model.motion,
+                );
+                PhaseData::Landing {
+                    runway: landing_runway,
+                }
+            }),
             PhaseData::Landing { runway: _runway } => {
                 if self.pos.planner.instructions.is_empty() {
                     remove = true;
