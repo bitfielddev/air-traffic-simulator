@@ -159,10 +159,12 @@ mod tests {
                     Arc::new(Waypoint {
                         name: WaypointId::default(),
                         pos: Pos2::new(10.0, 0.0),
+                        connections: Arc::new([]),
                     }),
                     Arc::new(Waypoint {
                         name: WaypointId::default(),
                         pos: Pos2::new(10.0, 10.0),
+                        connections: Arc::new([]),
                     }),
                 ]),
             ),

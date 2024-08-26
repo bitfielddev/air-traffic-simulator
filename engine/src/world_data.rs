@@ -1,4 +1,9 @@
-use std::{cmp::Ordering, path::Path, sync::Arc};
+use std::{
+    cmp::Ordering,
+    collections::{HashMap, VecDeque},
+    path::Path,
+    sync::Arc,
+};
 
 use eyre::{eyre, Result};
 use glam::Vec2;
@@ -6,7 +11,14 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 
-use crate::util::{ray::Ray, AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId};
+use crate::{
+    state::airport::Airport,
+    util::{
+        pos::{Pos2Angle, Pos3Angle},
+        ray::Ray,
+        AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId,
+    },
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct WorldData {
@@ -31,6 +43,14 @@ impl WorldData {
         }
         None
     }
+    #[must_use]
+    pub fn airport(&self, code: &AirportCode) -> Option<&Arc<AirportData>> {
+        self.airports.iter().find(|a| a.code == *code)
+    }
+    #[must_use]
+    pub fn waypoint(&self, name: &WaypointId) -> Option<&Arc<Waypoint>> {
+        self.waypoints.iter().find(|a| a.name == *name)
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -38,6 +58,17 @@ pub struct AirportData {
     pub name: SmolStr,
     pub code: AirportCode,
     pub runways: Arc<[Arc<Runway>]>,
+}
+
+impl AirportData {
+    pub fn centre(&self) -> Pos2 {
+        self.runways
+            .iter()
+            .flat_map(|a| [a.start, a.end])
+            .sum::<Pos2>()
+            / self.runways.len() as f32
+            / 2.0
+    }
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -124,8 +155,75 @@ pub struct ModelMotion {
     pub turning_radius: f32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Waypoint {
     pub name: WaypointId,
     pub pos: Pos2,
+    pub connections: Arc<[WaypointId]>,
+}
+
+impl WorldData {
+    pub fn find_waypoint_route(&self, from: Pos2Angle, to: Pos2) -> VecDeque<Arc<Waypoint>> {
+        let Some((from_waypoint, _)) = self
+            .waypoints
+            .iter()
+            .map(|a| {
+                (
+                    a,
+                    a.pos.distance(from.0) / if a.pos.dot(from.0) > 0.0 { 2.0 } else { 1.0 },
+                )
+            })
+            .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
+            .next()
+        else {
+            return VecDeque::new();
+        };
+        let Some((to_waypoint, _)) = self
+            .waypoints
+            .iter()
+            .map(|a| (a, a.pos.distance(to)))
+            .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
+            .next()
+        else {
+            return VecDeque::new();
+        };
+
+        let h = |w: &Arc<Waypoint>| w.pos.distance(to_waypoint.pos);
+        let mut came_from = HashMap::<&WaypointId, &Arc<Waypoint>>::new();
+        let mut g_score = HashMap::from([(&from_waypoint.name, 0.0)]);
+        let mut f_score = HashMap::from([(&from_waypoint.name, h(&from_waypoint))]);
+
+        while let Some((current_name, _)) = f_score
+            .iter()
+            .map(|(a, b)| (*a, *b))
+            .min_by(|(_, v1), (_, v2)| v1.total_cmp(v2))
+        {
+            let mut current = self.waypoint(current_name).unwrap();
+            if current == to_waypoint {
+                let mut total_path = VecDeque::from([Arc::clone(current)]);
+                while let Some(new_current) = came_from.get(&current.name) {
+                    current = new_current;
+                    total_path.push_front(Arc::clone(current));
+                }
+                return total_path;
+            }
+            f_score.remove(&current.name);
+
+            for neighbour_name in current.connections.iter() {
+                let Some(neighbour) = self.waypoint(&neighbour_name) else {
+                    continue;
+                };
+                let tent_g = *g_score.get(&current.name).unwrap_or(&f32::INFINITY)
+                    + current.pos.distance(neighbour.pos);
+                if tent_g < *g_score.get(&neighbour.name).unwrap_or(&f32::INFINITY) {
+                    came_from.insert(&neighbour.name, current);
+                    g_score.insert(&neighbour.name, tent_g);
+                    f_score.insert(&neighbour.name, tent_g + h(neighbour));
+                }
+            }
+        }
+
+        // TODO cannot find path
+        VecDeque::new()
+    }
 }

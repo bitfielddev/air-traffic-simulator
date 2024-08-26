@@ -17,9 +17,9 @@ use crate::{
         kinematics::{Kinematics, Target},
         pos::{Pos2Angle, Pos3Angle},
         ray::Ray,
-        AirportStateId, PlaneStateId,
+        AirportStateId, PlaneStateId, Pos2,
     },
-    world_data::{Flight, PlaneData, Runway},
+    world_data::{Flight, PlaneData, Runway, WorldData},
 };
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -34,18 +34,29 @@ pub struct Plane {
 
 impl Plane {
     #[must_use]
-    pub fn new(model: &Arc<PlaneData>, flight: &Arc<Flight>, runway: &Arc<Runway>) -> Self {
+    pub fn new(
+        model: &Arc<PlaneData>,
+        flight: &Arc<Flight>,
+        runway: &Arc<Runway>,
+        wd: Option<&WorldData>,
+    ) -> Self {
+        let pos_ang = Pos3Angle(
+            runway.start3(),
+            Angle((runway.end - runway.start).to_angle()),
+        );
         let mut s = Self {
             id: Uuid::new_v4().to_smolstr(),
             pos: PlanePos {
-                pos_ang: Pos3Angle(
-                    runway.start3(),
-                    Angle((runway.end - runway.start).to_angle()),
-                ),
+                pos_ang,
                 kinematics: Kinematics::default(),
                 planner: FlightPlanner::new(
                     VecDeque::from([FlightInstruction::Straight(runway.ray())]),
-                    VecDeque::from([]),
+                    wd.map_or_else(VecDeque::new, |wd| {
+                        wd.find_waypoint_route(
+                            pos_ang.to_2(),
+                            wd.airport(&flight.to).map_or(Pos2::ZERO, |a| a.centre()),
+                        )
+                    }),
                 ), // TODO
             },
             model: Arc::clone(model),
@@ -243,6 +254,7 @@ mod tests {
                 ..Flight::default()
             }),
             &runway,
+            None,
         ));
         let config = Config {
             tick_duration: 1.0,
@@ -288,6 +300,7 @@ mod tests {
                 ..Flight::default()
             }),
             &runway,
+            None,
         ));
         state.planes[0]
             .pos
@@ -296,6 +309,7 @@ mod tests {
             .push_back(Arc::new(Waypoint {
                 name: WaypointId::default(),
                 pos: Pos2::new(50.0, -100.0),
+                connections: Arc::new([]),
             }));
         state.planes[0]
             .pos
@@ -304,6 +318,7 @@ mod tests {
             .push_back(Arc::new(Waypoint {
                 name: WaypointId::default(),
                 pos: Pos2::new(150.0, 100.0),
+                connections: Arc::new([]),
             }));
         let config = Config {
             tick_duration: 0.25,
@@ -318,12 +333,75 @@ mod tests {
             //     "{:?}\n{:?}\n{:?}\n",
             //     state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics
             // );
-            eprintln!(
-                "{} {} {}",
-                state.planes[0].pos.pos_ang.0.x,
-                state.planes[0].pos.pos_ang.0.y,
-                state.planes[0].pos.pos_ang.0.z
-            );
+            // eprintln!(
+            //     "{} {} {}",
+            //     state.planes[0].pos.pos_ang.0.x,
+            //     state.planes[0].pos.pos_ang.0.y,
+            //     state.planes[0].pos.pos_ang.0.z
+            // );
+        }
+    }
+
+    #[test]
+    fn waypoint_auto_plan() {
+        let runway = Arc::new(Runway {
+            start: Pos2::ZERO,
+            end: Pos2::new(50.0, 0.0),
+            ..Runway::default()
+        });
+        let airport_data = Arc::new(AirportData {
+            code: "ABC".into(),
+            runways: Arc::new([Arc::clone(&runway)]),
+            ..AirportData::default()
+        });
+        let wd = WorldData {
+            classes: Arc::new([]),
+            airports: Arc::new([Arc::clone(&airport_data)]),
+            flights: None,
+            planes: Arc::new([]),
+            waypoints: Arc::new([Arc::new(Waypoint {
+                name: WaypointId::default(),
+                pos: Pos2::new(50.0, -100.0),
+                connections: Arc::new([]),
+            })]),
+        };
+        let mut state = State::new(&[]);
+        state.airports.push(Airport::new(airport_data));
+        state.planes.push(Plane::new(
+            &Arc::new(PlaneData {
+                motion: ModelMotion {
+                    max_a: Vec2::new(5.0, 2.5),
+                    max_v: Vec2::new(50.0, 10.0),
+                    turning_radius: 50.0,
+                },
+                ..PlaneData::default()
+            }),
+            &Arc::new(Flight {
+                to: "ABC".into(),
+                ..Flight::default()
+            }),
+            &runway,
+            Some(&wd),
+        ));
+        let config = Config {
+            tick_duration: 0.25,
+            plane_spawn_chance: 0.0,
+        };
+        for _ in 0..250 {
+            state.tick(&config);
+            if state.planes.is_empty() {
+                break;
+            }
+            // eprintln!(
+            //     "{:?}\n{:?}\n{:?}\n{:?}\n",
+            //     state.planes[0].pos.pos_ang, state.planes[0].phase, state.planes[0].pos.kinematics, state.planes[0].pos.planner.route
+            // );
+            // eprintln!(
+            //     "{} {} {}",
+            //     state.planes[0].pos.pos_ang.0.x,
+            //     state.planes[0].pos.pos_ang.0.y,
+            //     state.planes[0].pos.pos_ang.0.z
+            // );
         }
     }
 }
