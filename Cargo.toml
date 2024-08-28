@@ -13,10 +13,10 @@ server = { path = "./server", package = "air-traffic-simulator-server" }
 [workspace]
 members = ["engine", "server", "example"]
 
-[lints.rust]
+[workspace.lints.rust]
 future-incompatible = "deny"
 
-[lints.clippy]
+[workspace.lints.clippy]
 all = "warn"
 pedantic = "warn"
 #cargo = "warn"
