@@ -1,17 +1,15 @@
 [package]
-name = "air-traffic-simulator"
+name = "air-traffic-simulator-example"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-engine = { path = "./engine", package = "air-traffic-simulator-engine" }
-server = { path = "./server", package = "air-traffic-simulator-server" }
+air-traffic-simulator = { path = ".." }
 
-
-[workspace]
-members = ["engine", "server", "example"]
+color-eyre = "0.6.3"
+serde_yaml = "0.9.34"
+tokio = { version = "1.39.3", features = ["full"] }
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 
 [lints.rust]
 future-incompatible = "deny"
