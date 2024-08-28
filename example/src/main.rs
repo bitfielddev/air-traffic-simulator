@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use color_eyre::Result;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 

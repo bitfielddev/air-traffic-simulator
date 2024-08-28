@@ -12,8 +12,6 @@ socketioxide = "0.14.1"
 tokio = { version = "1.39.3", features = ["full"] }
 tracing = "0.1.40"
 serde = "1.0.209"
-toml = "0.8.19"
-rmp-serde = "1.3.0"
 itertools = "0.13.0"
 
 [lints.rust]

@@ -1,10 +1,6 @@
-use std::io::Read;
-
 use axum::routing::get;
-use engine::{config::Config, engine::Engine, world_data::WorldData};
+use engine::engine::Engine;
 use eyre::Result;
-use itertools::Itertools;
-use serde::de::DeserializeOwned;
 use socketioxide::{
     extract::{Data, SocketRef},
     SocketIo,
@@ -21,8 +17,8 @@ fn websocket_connect(socket: SocketRef, Data(data): Data<()>) {
     socket.emit("welcome", data).ok();
 }
 
-#[tracing::instrument]
-pub async fn server(engine: Engine) -> Result<()> {
+#[tracing::instrument(skip_all)]
+pub async fn server(mut engine: Engine) -> Result<()> {
     let (layer, io) = SocketIo::new_layer();
     io.ns("/ws", websocket_connect);
 
