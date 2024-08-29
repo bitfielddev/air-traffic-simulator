@@ -51,12 +51,12 @@ impl State {
         self.airports.iter_mut().find(|a| a.id == *id)
     }
     #[tracing::instrument(skip_all)]
-    pub fn tick(&mut self, config: &Config, wd: &WorldData) {
+    pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Vec<u8>) {
         let mut remove_list = vec![];
         for (id, (remove, send)) in self
             .planes
             .par_iter_mut()
-            .map(|plane| (plane.id.clone(), plane.tick(config)))
+            .map(|plane| (plane.id, plane.tick(config)))
             .collect::<Vec<_>>()
         {
             if remove {
@@ -114,6 +114,7 @@ impl State {
             info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");
             self.planes.push(plane);
         }
+        (remove_list, self.coord_state())
     }
     #[must_use]
     pub fn coord_state(&self) -> Vec<u8> {

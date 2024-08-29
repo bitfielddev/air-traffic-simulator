@@ -4,6 +4,7 @@ use dubins_paths::DubinsPath;
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
+use ts_rs::TS;
 
 use crate::{
     util::{
@@ -17,20 +18,26 @@ use crate::{
     world_data::{ModelMotion, Waypoint},
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct PlanePos {
     pub pos_ang: Pos3Angle,
     pub kinematics: Kinematics,
     pub planner: FlightPlanner,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct FlightPlanner {
+    #[ts(as = "()")]
     pub instructions: VecDeque<FlightInstruction>,
+    #[ts(as = "Vec<Arc<Waypoint>>")]
     pub route: VecDeque<Arc<Waypoint>>,
     pub instruction_s: f32,
+    #[ts(as = "()")]
     pub past_instructions: Vec<FlightInstruction>,
     pub past_route: Vec<Arc<Waypoint>>,
+    #[ts(as = "Vec<(f32, f32, f32)>")]
     pub past_pos: Vec<Pos3>,
 }
 

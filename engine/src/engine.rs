@@ -1,4 +1,4 @@
-use crate::{config::Config, state::State, world_data::WorldData};
+use crate::{config::Config, state::State, util::PlaneStateId, world_data::WorldData};
 
 #[derive(Clone)]
 pub struct Engine {
@@ -16,7 +16,7 @@ impl Engine {
             config,
         }
     }
-    pub fn tick(&mut self) {
-        self.state.tick(&self.config, &self.world);
+    pub fn tick(&mut self) -> (Vec<PlaneStateId>, Vec<u8>) {
+        self.state.tick(&self.config, &self.world)
     }
 }

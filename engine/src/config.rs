@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Config {
     #[serde(default)]
     pub tick_duration: f32,

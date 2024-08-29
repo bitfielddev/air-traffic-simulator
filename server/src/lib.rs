@@ -15,45 +15,50 @@ use tokio::{
     sync::RwLock,
     time::{Duration, Instant},
 };
+use tower_http::cors::CorsLayer;
 use tracing::{error, info};
 
 #[expect(clippy::needless_pass_by_value)]
-fn websocket_connect(socket: SocketRef, Data(_data): Data<()>) {
+fn websocket_connect(socket: SocketRef) {
     info!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
 
     socket.on(
         "plane",
-        |ack: AckSender, Data(uuid): Data<PlaneStateId>, engine_arc: State<Arc<RwLock<Engine>>>| {
-            let engine = engine_arc.blocking_read();
+        |ack: AckSender, Data(uuid): Data<PlaneStateId>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
             let _ = ack
                 .send(engine.state.plane(&uuid))
-                .inspect_err(|e| error!("{e:#}"));
+                .inspect_err(|e| error!(ev="plane", "{e:#}"));
         },
     );
 
     socket.on(
         "airport",
-        |ack: AckSender, Data(id): Data<AirportStateId>, engine_arc: State<Arc<RwLock<Engine>>>| {
-            let engine = engine_arc.blocking_read();
+        |ack: AckSender, Data(id): Data<AirportStateId>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
             let _ = ack
                 .send(engine.state.airport(&id))
-                .inspect_err(|e| error!("{e:#}"));
+                .inspect_err(|e| error!(ev="airport", "{e:#}"));
         },
     );
 
     socket.on(
         "world_data",
-        |ack: AckSender, engine_arc: State<Arc<RwLock<Engine>>>| {
-            let engine = engine_arc.blocking_read();
-            let _ = ack.send(&engine.world).inspect_err(|e| error!("{e:#}"));
+        |ack: AckSender, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
+            let _ = ack
+                .send(&engine.world)
+                .inspect_err(|e| error!(ev = "world_data", "{e:#}"));
         },
     );
 
     socket.on(
         "config",
-        |ack: AckSender, engine_arc: State<Arc<RwLock<Engine>>>| {
-            let engine = engine_arc.blocking_read();
-            let _ = ack.send(&engine.config).inspect_err(|e| error!("{e:#}"));
+        |ack: AckSender, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
+            let _ = ack
+                .send(&engine.config)
+                .inspect_err(|e| error!(ev = "config", "{e:#}"));
         },
     );
 }
@@ -68,20 +73,20 @@ pub async fn server(engine: Engine) -> Result<()> {
 
     let app = axum::Router::new()
         .route("/", get(|| async { "Hello, World!" }))
-        .layer(layer);
+        .layer(layer)
+        .layer(CorsLayer::permissive());
 
     tokio::spawn(async move {
         #[expect(clippy::infinite_loop)]
         loop {
             let start = Instant::now();
             let mut engine = engine_arc.write().await;
-            engine.tick();
-            let state = engine.state.coord_state();
+            let (removed, state) = engine.tick();
             drop(engine);
             let _ = io
                 .bin(vec![state])
-                .emit("state", ())
-                .inspect_err(|e| error!("{e:#}"));
+                .emit("state", vec![removed])
+                .inspect_err(|e| error!(ev = "state", "{e:#}"));
             info!(delta=?start.elapsed());
             tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;
         }

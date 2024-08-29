@@ -1,11 +1,13 @@
 use dubins_paths::PosRot;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::util::{angle::Angle, Pos2, Pos3};
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Pos3Angle(pub Pos3, pub Angle);
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
+pub struct Pos3Angle(#[ts(as = "(f32, f32, f32)")] pub Pos3, pub Angle);
 
 impl Pos3Angle {
     #[must_use]
@@ -14,8 +16,9 @@ impl Pos3Angle {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-pub struct Pos2Angle(pub Pos2, pub Angle);
+#[derive(Clone, Copy, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
+pub struct Pos2Angle(#[ts(as = "(f32, f32)")] pub Pos2, pub Angle);
 
 impl Pos2Angle {
     #[must_use]

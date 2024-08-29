@@ -8,7 +8,8 @@ engine = { path = "../engine", package = "air-traffic-simulator-engine" }
 
 axum = "0.7.5"
 eyre = "0.6.12"
-socketioxide = { version = "0.14.1", features = ["state"] }
+socketioxide = { version = "0.14.1", features = ["state", "tracing"] }
+tower-http = { version = "0.5.2", features = ["cors"] }
 tokio = { version = "1.39.3", features = ["full"] }
 tracing = "0.1.40"
 serde = "1.0.209"

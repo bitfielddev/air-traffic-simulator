@@ -2,6 +2,7 @@ use std::{collections::VecDeque, sync::Arc};
 
 use rand::prelude::*;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::{
     config::Config,
@@ -10,10 +11,13 @@ use crate::{
     world_data::AirportData,
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct Airport {
+    #[ts(as = "String")]
     pub id: AirportStateId,
     pub airport: Arc<AirportData>,
+    #[ts(as = "Vec<AirportEvent>")]
     pub events: VecDeque<AirportEvent>,
 }
 
@@ -47,13 +51,15 @@ impl Airport {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct AirportEvent {
     pub from: PlaneStateId,
     pub payload: AirportEventPayload,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 #[non_exhaustive]
 pub enum AirportEventPayload {
     RequestRunway,

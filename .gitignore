@@ -488,9 +488,5 @@ Temporary Items
 .apdisk
 
 ### Other
-.idea/
 .vscode
-
-# Added by cargo
-
-/target
+engine/bindings

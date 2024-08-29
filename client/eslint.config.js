@@ -8,10 +8,10 @@ import tseslint from "typescript-eslint";
 import vueParser from "vue-eslint-parser";
 
 export default tseslint.config(
-  // @ts-expect-error
-  pluginJs.configs.all,
+  pluginJs.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
+  // @ts-expect-error
   ...pluginVue.configs["flat/essential"],
   ...pluginVue.configs["flat/recommended"],
   {

@@ -11,13 +11,16 @@ use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
 use tracing::{trace, warn};
+use ts_rs::TS;
 
 use crate::util::{
     pos::Pos2Angle, ray::Ray, AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId,
 };
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct WorldData {
+    #[ts(as = "Arc<[Arc<[String]>]>")]
     pub classes: Arc<[Arc<[Class]>]>,
     pub airports: Arc<[Arc<AirportData>]>,
     pub flights: Option<Arc<[Arc<Flight>]>>,
@@ -49,9 +52,12 @@ impl WorldData {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct AirportData {
+    #[ts(as = "String")]
     pub name: SmolStr,
+    #[ts(as = "String")]
     pub code: AirportCode,
     pub runways: Arc<[Arc<Runway>]>,
 }
@@ -68,11 +74,15 @@ impl AirportData {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Runway {
+    #[ts(as = "(f32, f32)")]
     pub start: Pos2,
+    #[ts(as = "(f32, f32)")]
     pub end: Pos2,
     pub altitude: f32,
+    #[ts(as = "String")]
     pub class: Class,
 }
 
@@ -95,12 +105,18 @@ impl Runway {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Flight {
+    #[ts(as = "String")]
     pub airline: SmolStr,
+    #[ts(as = "String")]
     pub code: FlightCode,
+    #[ts(as = "String")]
     pub from: AirportCode,
+    #[ts(as = "String")]
     pub to: AirportCode,
+    #[ts(as = "Arc<[String]>")]
     pub plane: Arc<[PlaneModelId]>,
 }
 
@@ -135,27 +151,39 @@ impl Flight {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct PlaneData {
+    #[ts(as = "String")]
     pub id: PlaneModelId,
+    #[ts(as = "String")]
     pub name: SmolStr,
+    #[ts(as = "String")]
     pub manufacturer: SmolStr,
+    #[ts(as = "String")]
     pub class: Class,
     pub motion: ModelMotion,
     pub icon: Option<Arc<Path>>,
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct ModelMotion {
+    #[ts(as = "(f32, f32)")]
     pub max_v: Vec2,
+    #[ts(as = "(f32, f32)")]
     pub max_a: Vec2,
     pub turning_radius: f32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct Waypoint {
+    #[ts(as = "String")]
     pub name: WaypointId,
+    #[ts(as = "(f32, f32)")]
     pub pos: Pos2,
+    #[ts(as = "Arc<[String]>")]
     pub connections: Arc<[WaypointId]>,
 }
 

@@ -1,17 +1,21 @@
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 use tracing::{trace, warn};
+use ts_rs::TS;
 
 use crate::world_data::ModelMotion;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct Kinematics {
     pub x_target: Vec<Target>,
     pub y_target: Vec<Target>,
+    #[ts(as = "(f32, f32)")]
     pub v: Vec2,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct Target {
     pub a: f32,
     pub dt: f32,

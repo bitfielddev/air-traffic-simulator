@@ -6,6 +6,7 @@ use derive_more::{
 };
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::util::direction::Rotation;
 
@@ -29,7 +30,9 @@ use crate::util::direction::Rotation;
     From,
     Into,
     Display,
+    TS,
 )]
+#[ts(export)]
 pub struct Angle(pub f32);
 
 impl Angle {

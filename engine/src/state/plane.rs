@@ -5,6 +5,7 @@ use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 use smol_str::ToSmolStr;
 use tracing::info;
+use ts_rs::TS;
 use uuid::Uuid;
 
 use crate::{
@@ -23,13 +24,15 @@ use crate::{
     world_data::{Flight, PlaneData, Runway, WorldData},
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct Plane {
     pub id: PlaneStateId,
     pub pos: PlanePos,
     pub model: Arc<PlaneData>,
     pub flight: Arc<Flight>,
     pub phase: PhaseData,
+    #[ts(as = "Vec<PlaneEvent>")]
     pub events: VecDeque<PlaneEvent>,
 }
 
@@ -197,7 +200,8 @@ impl Plane {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub enum PhaseData {
     Takeoff { runway: Arc<Runway> },
     Cruise,
@@ -217,13 +221,16 @@ impl PhaseData {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 pub struct PlaneEvent {
+    #[ts(as = "String")]
     pub from: AirportStateId,
     pub payload: PlaneEventPayload,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[ts(export)]
 #[non_exhaustive]
 pub enum PlaneEventPayload {
     ClearForLanding(Arc<Runway>),

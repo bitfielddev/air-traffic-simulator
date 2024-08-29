@@ -1,3 +1,7 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import Map from "./components/Map.vue";
+</script>
 
-<template>hi</template>
+<template>
+  <Map />
+</template>
