@@ -10,7 +10,7 @@ use tracing::{debug, info};
 
 use crate::{
     config::Config,
-    util::{FlightCode, PlaneStateId},
+    util::{AirportStateId, FlightCode, PlaneStateId},
     world_data::{AirportData, Flight, WorldData},
 };
 
@@ -43,11 +43,11 @@ impl State {
         self.planes.iter_mut().find(|a| a.id == *id)
     }
     #[must_use]
-    pub fn airport(&self, id: &PlaneStateId) -> Option<&Airport> {
+    pub fn airport(&self, id: &AirportStateId) -> Option<&Airport> {
         self.airports.iter().find(|a| a.id == *id)
     }
     #[must_use]
-    pub fn airport_mut(&mut self, id: &PlaneStateId) -> Option<&mut Airport> {
+    pub fn airport_mut(&mut self, id: &AirportStateId) -> Option<&mut Airport> {
         self.airports.iter_mut().find(|a| a.id == *id)
     }
     #[tracing::instrument(skip_all)]
@@ -114,5 +114,20 @@ impl State {
             info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");
             self.planes.push(plane);
         }
+    }
+    #[must_use]
+    pub fn coord_state(&self) -> Vec<u8> {
+        self.planes
+            .iter()
+            .flat_map(|p| {
+                p.id.into_bytes()
+                    .into_iter()
+                    .chain(p.pos.pos_ang.0.x.to_le_bytes())
+                    .chain(p.pos.pos_ang.0.y.to_le_bytes())
+                    .chain(p.pos.pos_ang.1 .0.to_le_bytes())
+                    .chain(p.pos.kinematics.v.x.to_le_bytes())
+                    .chain(p.pos.kinematics.v.y.to_le_bytes())
+            })
+            .collect::<Vec<_>>()
     }
 }

@@ -46,7 +46,7 @@ impl Plane {
             Angle((runway.end - runway.start).to_angle()),
         );
         let mut s = Self {
-            id: Uuid::new_v4().to_smolstr(),
+            id: Uuid::new_v4(),
             pos: PlanePos {
                 pos_ang,
                 kinematics: Kinematics::default(),

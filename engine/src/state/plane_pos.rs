@@ -12,6 +12,7 @@ use crate::{
         kinematics::Kinematics,
         pos::{Pos2Angle, Pos3Angle},
         ray::Ray,
+        Pos3,
     },
     world_data::{ModelMotion, Waypoint},
 };
@@ -30,6 +31,7 @@ pub struct FlightPlanner {
     pub instruction_s: f32,
     pub past_instructions: Vec<FlightInstruction>,
     pub past_route: Vec<Arc<Waypoint>>,
+    pub past_pos: Vec<Pos3>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -48,6 +50,7 @@ impl PlanePos {
         let ds = self.kinematics.tick(dt, model_motion);
 
         let xz = self.planner.tick(ds.x, self.pos_ang.to_2(), model_motion);
+        self.planner.past_pos.push(self.pos_ang.0);
         self.pos_ang = Pos3Angle(xz.0.extend(self.pos_ang.0.z + ds.y), xz.1);
     }
 }

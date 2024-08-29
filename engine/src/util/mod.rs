@@ -1,5 +1,6 @@
 use glam::{Vec2, Vec3};
 use smol_str::SmolStr;
+use uuid::Uuid;
 
 pub mod angle;
 pub mod direction;
@@ -14,5 +15,5 @@ pub type Pos3 = Vec3;
 pub type Class = SmolStr;
 pub type PlaneModelId = SmolStr;
 pub type WaypointId = SmolStr;
-pub type PlaneStateId = SmolStr;
+pub type PlaneStateId = Uuid;
 pub type AirportStateId = SmolStr;

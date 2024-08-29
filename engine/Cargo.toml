@@ -17,7 +17,7 @@ rayon = "1.10.0"
 serde = { version = "1.0.209", features = ["rc", "derive"] }
 smol_str = { version = "0.2.2", features = ["serde"] }
 tracing = "0.1.40"
-uuid = { version = "1.10.0", features = ["v4"] }
+uuid = { version = "1.10.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
 assertables = "7.0.1"
