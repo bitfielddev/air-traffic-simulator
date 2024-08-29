@@ -113,12 +113,12 @@ impl Plane {
                 send.push((
                     self.flight.to.clone(),
                     AirportEvent {
-                        from: self.id.clone(),
+                        from: self.id,
                         payload: AirportEventPayload::RequestRunway,
                     },
                 ));
                 self.pos.kinematics.target_x(
-                    Some(self.model.motion.max_v.x / 2.0),
+                    Some(self.model.motion.max_v.x * 0.75),
                     None,
                     None,
                     None,
@@ -144,7 +144,7 @@ impl Plane {
                     .unwrap(),
                 );
                 let straight = FlightInstruction::Straight(landing_ray);
-                let touchdown_length = landing_runway.len() / 3.0 * 4.0;
+                let touchdown_length = landing_runway.len() * 0.75;
                 self.pos.planner.instructions.extend([dubins, straight]);
 
                 let ds = self
@@ -159,7 +159,7 @@ impl Plane {
                     self.pos
                         .kinematics
                         .target_x(
-                            Some(self.model.motion.max_v.x / 2.0),
+                            Some(self.model.motion.max_v.x * 0.75),
                             Some(ds),
                             None,
                             None,
@@ -175,11 +175,11 @@ impl Plane {
                     self.model.motion,
                 );
                 self.pos.kinematics.x_target.push(Target {
-                    a: (self.model.motion.max_v.x / 2.0)
-                        .mul_add(-(self.model.motion.max_v.x / 2.0), 1.0)
+                    a: (self.model.motion.max_v.x * 0.75)
+                        .mul_add(-(self.model.motion.max_v.x * 0.75), 1.0)
                         / touchdown_length
                         / 2.0,
-                    dt: 2.0 * touchdown_length / (1.0 + self.model.motion.max_v.x / 2.0),
+                    dt: 2.0 * touchdown_length / (1.0 + self.model.motion.max_v.x * 0.75),
                 }); // TODO
                 PhaseData::Landing {
                     runway: landing_runway,

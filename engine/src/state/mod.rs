@@ -125,6 +125,7 @@ impl State {
                     .into_iter()
                     .chain(p.pos.pos_ang.0.x.to_le_bytes())
                     .chain(p.pos.pos_ang.0.y.to_le_bytes())
+                    .chain(p.pos.pos_ang.0.z.to_le_bytes())
                     .chain(p.pos.pos_ang.1 .0.to_le_bytes())
                     .chain(p.pos.kinematics.v.x.to_le_bytes())
                     .chain(p.pos.kinematics.v.y.to_le_bytes())

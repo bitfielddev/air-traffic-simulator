@@ -14,6 +14,7 @@
     "gen-types": "cd ../engine && cargo test && $(mv bindings ../client/src || true) && cd ../client && eslint --fix src/bindings"
   },
   "dependencies": {
+    "Leaflet.MultiOptionsPolyline": "github:hgoebl/Leaflet.MultiOptionsPolyline",
     "leaflet": "^1.9.4",
     "socket.io-client": "^4.7.5",
     "uuid": "^10.0.0",

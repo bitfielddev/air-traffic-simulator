@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      Leaflet.MultiOptionsPolyline:
+        specifier: github:hgoebl/Leaflet.MultiOptionsPolyline
+        version: https://codeload.github.com/hgoebl/Leaflet.MultiOptionsPolyline/tar.gz/ebd929f3f3c9f0eca9ef13d46ff04533aa1d3116(leaflet@1.9.4)
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
@@ -687,6 +690,12 @@ packages:
 
   '@vue/tsconfig@0.5.1':
     resolution: {integrity: sha512-VcZK7MvpjuTPx2w6blwnwZAu5/LgBUtejFOi3pPGQFXQN5Ela03FUtd2Qtg4yWGGissVL0dr6Ro1LfOFh+PCuQ==}
+
+  Leaflet.MultiOptionsPolyline@https://codeload.github.com/hgoebl/Leaflet.MultiOptionsPolyline/tar.gz/ebd929f3f3c9f0eca9ef13d46ff04533aa1d3116:
+    resolution: {tarball: https://codeload.github.com/hgoebl/Leaflet.MultiOptionsPolyline/tar.gz/ebd929f3f3c9f0eca9ef13d46ff04533aa1d3116}
+    version: 1.0.0
+    peerDependencies:
+      leaflet: ^1.0.0
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -2235,6 +2244,10 @@ snapshots:
   '@vue/shared@3.4.38': {}
 
   '@vue/tsconfig@0.5.1': {}
+
+  Leaflet.MultiOptionsPolyline@https://codeload.github.com/hgoebl/Leaflet.MultiOptionsPolyline/tar.gz/ebd929f3f3c9f0eca9ef13d46ff04533aa1d3116(leaflet@1.9.4):
+    dependencies:
+      leaflet: 1.9.4
 
   acorn-jsx@5.3.2(acorn@8.12.1):
     dependencies:
