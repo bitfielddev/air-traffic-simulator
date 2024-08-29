@@ -5,5 +5,11 @@ repos:
         name: cargo fmt
         entry: cargo +nightly fmt
         language: system
-        types: [ rust ]
+        types: [rust]
         pass_filenames: false
+      - id: prettier
+        name: prettier
+        language: system
+        entry: bash -c "cd client && pnpm run format"
+        pass_filenames: false
+        verbose: true

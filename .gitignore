@@ -489,6 +489,7 @@ Temporary Items
 
 ### Other
 .idea/
+.vscode
 
 # Added by cargo
 
