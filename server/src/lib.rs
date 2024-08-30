@@ -18,7 +18,7 @@ use tokio::{
 };
 use tower_http::cors::CorsLayer;
 #[cfg(feature = "client")]
-use tower_http::services::{ServeDir, ServeFile};
+use tower_http::services::ServeDir;
 use tracing::{error, info};
 
 #[cfg(feature = "client")]
