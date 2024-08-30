@@ -8,6 +8,7 @@ import * as L from "leaflet";
 import * as map from "@/map";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import PlaneInfo from "./PlaneInfo.vue";
 import type { Airport } from "@/bindings/Airport";
 import AirportInfo from "./AirportInfo.vue";

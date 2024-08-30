@@ -4,6 +4,7 @@ import type { Plane } from "./bindings/Plane";
 import type { Airport } from "./bindings/Airport";
 import type { WorldData } from "./bindings/WorldData";
 import type { Config } from "./bindings/Config";
+import config from "./config";
 
 interface ServerToClientEvents {
   state: (removed: string[], bin: ArrayBuffer) => void;
@@ -16,6 +17,6 @@ interface ClientToServerEvents {
   config: (cb: (a: Config) => void) => void;
 }
 
-export default ref(io("0.0.0.0:3000")) as Ref<
+export default ref(io(config.socketUri)) as Ref<
   Socket<ServerToClientEvents, ClientToServerEvents>
 >;

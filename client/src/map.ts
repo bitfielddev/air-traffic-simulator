@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import config from "./config";
 
 export const map = ref<L.Map>();
 
@@ -8,9 +9,5 @@ export function initMap() {
     crs: L.CRS.Simple,
   }).setView([0, 0], 0);
 
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-  }).addTo(map.value);
+  config.tileLayer.addTo(map.value);
 }

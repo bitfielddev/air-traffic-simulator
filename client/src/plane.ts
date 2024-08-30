@@ -5,6 +5,7 @@ import { escape } from "./util";
 import { stringify as uuidStringify } from "uuid";
 import * as map from "@/map";
 import "Leaflet.MultiOptionsPolyline";
+import config from "@/config";
 
 export interface SelectedPlane {
   id: string;
@@ -53,7 +54,7 @@ export async function selectPlane(
       {
         multiOptions: {
           optionIdxFn: (latLng) => {
-            const altThresholds = [10, 20, 30, 40, 50, 60, 70, 80, 90];
+            const altThresholds = config.altitudeColours.map((a) => a[0]);
 
             for (let i = 0; i < altThresholds.length; ++i) {
               if (latLng.alt <= altThresholds[i]) {
@@ -62,17 +63,7 @@ export async function selectPlane(
             }
             return altThresholds.length;
           },
-          options: [
-            { color: "#aaaaaa" },
-            { color: "#aaaa00" },
-            { color: "#00aa00" },
-            { color: "#00aaaa" },
-            { color: "#0000aa" },
-            { color: "#aa00aa" },
-            { color: "#aa0000" },
-            { color: "#000000" },
-            { color: "#000000" },
-          ],
+          options: config.altitudeColours.map((a) => ({ color: a[1] })),
         },
       },
     ).addTo(map.value!),
