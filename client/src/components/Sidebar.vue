@@ -1,22 +1,21 @@
 <script setup lang="ts">
-import * as plane from "@/plane";
 import * as airport from "@/airport";
-import { computed, ref, watch } from "vue";
-import "leaflet-easybutton/src/easy-button.css";
-import "leaflet-easybutton";
-import * as L from "leaflet";
 import * as map from "@/map";
-import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import * as plane from "@/plane";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-import PlaneInfo from "./PlaneInfo.vue";
-import type { Airport } from "@/bindings/Airport";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import * as L from "leaflet";
+import "leaflet-easybutton";
+import "leaflet-easybutton/src/easy-button.css";
+import { computed, ref, watch } from "vue";
 import AirportInfo from "./AirportInfo.vue";
+import PlaneInfo from "./PlaneInfo.vue";
 
 const planeState = computed(() =>
-  plane.selected.value === undefined
+  plane.selectedPlane.value === undefined
     ? undefined
-    : (plane.markers.get(plane.selected.value.id) as
+    : (plane.planeMarkers.get(plane.selectedPlane.value.id) as
         | plane.PlaneState
         | undefined),
 );
@@ -24,7 +23,7 @@ const airportState = computed(() =>
   airport.selectedAirport.value === undefined
     ? undefined
     : (airport.airportMarkers.get(airport.selectedAirport.value) as
-        | Airport
+        | airport.AirportState
         | undefined),
 );
 

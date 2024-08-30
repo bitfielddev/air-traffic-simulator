@@ -1,11 +1,11 @@
+import config from "@/config";
+import * as map from "@/map";
+import "Leaflet.MultiOptionsPolyline";
+import { stringify as uuidStringify } from "uuid";
 import { reactive, ref, type Ref } from "vue";
 import type { Plane } from "./bindings/Plane";
 import socket from "./socket";
 import { escape } from "./util";
-import { stringify as uuidStringify } from "uuid";
-import * as map from "@/map";
-import "Leaflet.MultiOptionsPolyline";
-import config from "@/config";
 
 export interface SelectedPlane {
   id: string;
@@ -20,24 +20,24 @@ export interface PlaneState {
   info?: Plane;
 }
 
-export const markers = reactive(new Map<string, PlaneState>());
-export const selected = ref<SelectedPlane>();
+export const planeMarkers = reactive(new Map<string, PlaneState>());
+export const selectedPlane = ref<SelectedPlane>();
 
 export function updateSelectPlane(latLng: L.LatLng) {
-  selected.value?.path.setLatLngs(
-    selected.value?.path.getLatLngs().concat([latLng]),
+  selectedPlane.value?.path.setLatLngs(
+    selectedPlane.value?.path.getLatLngs().concat([latLng]),
   );
 }
 export function deselectPlane() {
-  selected.value?.path.remove();
-  selected.value = undefined;
+  selectedPlane.value?.path.remove();
+  selectedPlane.value = undefined;
 }
 
 export async function getPlaneInfo(id: string, force?: boolean) {
-  const cache = markers.get(id)?.info;
+  const cache = planeMarkers.get(id)?.info;
   if (cache !== undefined && !force) return cache as Plane;
   const info: Plane = await socket.value.timeout(5000).emitWithAck("plane", id);
-  const state = markers.get(id)!;
+  const state = planeMarkers.get(id)!;
   if (state !== undefined) state.info = info;
   return info;
 }
@@ -53,7 +53,7 @@ export async function selectPlane(
     `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
   );
 
-  selected.value = {
+  selectedPlane.value = {
     path: L.multiOptionsPolyline(
       plane.pos.planner.past_pos.map((a) => L.latLng(...a)),
       {
@@ -79,8 +79,8 @@ export async function selectPlane(
 export function handleStateUpdates() {
   socket.value.on("state", (removed, bin) => {
     for (const remove of removed) {
-      markers.get(remove)?.marker.remove();
-      markers.delete(remove);
+      planeMarkers.get(remove)?.marker.remove();
+      planeMarkers.delete(remove);
     }
     for (let off = 0; off < bin.byteLength; off += 40) {
       const id = uuidStringify(new Uint8Array(bin.slice(off, off + 16)));
@@ -92,9 +92,9 @@ export function handleStateUpdates() {
       const vx = view.getFloat32(off + 32, true);
       const vy = view.getFloat32(off + 36, true);
 
-      const state = markers.get(id);
+      const state = planeMarkers.get(id);
       if (state === undefined) {
-        markers.set(id, {
+        planeMarkers.set(id, {
           s: [sx, sy, sz],
           angle,
           v: [vx, vy],
@@ -111,7 +111,7 @@ export function handleStateUpdates() {
         state.marker.setLatLng([sx, sy]);
       }
 
-      if (selected.value?.id === id) {
+      if (selectedPlane.value?.id === id) {
         updateSelectPlane(L.latLng(sx, sy, sz));
       }
     }
@@ -120,7 +120,7 @@ export function handleStateUpdates() {
 
 export function updatePositions(dt: number) {
   const start = Date.now();
-  for (const state of markers.values()) {
+  for (const state of planeMarkers.values()) {
     state.s[0] += state.v[0] * Math.cos(state.angle) * (dt / 1000);
     state.s[1] += state.v[0] * Math.sin(state.angle) * (dt / 1000);
     state.marker.setLatLng(state.s);

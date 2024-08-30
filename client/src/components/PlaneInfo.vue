@@ -6,6 +6,7 @@ import type { PlaneState } from "@/plane";
 import * as L from "leaflet";
 import { getWorldData } from "@/staticData";
 import * as map from "@/map";
+import AirportLink from "./AirportLink.vue";
 
 const { planeState } = defineProps<{ planeState: PlaneState }>();
 
@@ -58,7 +59,8 @@ onUnmounted(() => {
 <template>
   <div style="text-align: center">
     <b style="font-size: 3em"
-      >{{ planeState.info?.flight.from }} → {{ planeState.info?.flight.to }}</b
+      ><AirportLink :airport-id="planeState.info!.flight.from" /> →
+      <AirportLink :airport-id="planeState.info!.flight.to" /></b
     ><br />
     <b>{{ planeState.info?.flight.code }}</b>
     operated by <b>{{ planeState.info?.flight.airline }}</b

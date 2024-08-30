@@ -5,7 +5,12 @@ import socket from "./socket";
 import { escape } from "./util";
 import { getWorldData } from "./staticData";
 
-export const airportMarkers = reactive(new Map<string, Airport>());
+export interface AirportState {
+  info?: Airport;
+  marker: L.CircleMarker;
+}
+
+export const airportMarkers = reactive(new Map<string, AirportState>());
 export const selectedAirport = ref<string>();
 
 export function deselectAirport() {
@@ -13,12 +18,19 @@ export function deselectAirport() {
 }
 export async function selectAirport(id: string) {
   deselectAirport();
-  const airport: Airport = await socket.value
+  await getAirportInfo(id, true);
+  selectedAirport.value = id;
+}
+
+export async function getAirportInfo(id: string, force?: boolean) {
+  const cache = airportMarkers.get(id)?.info;
+  if (cache !== undefined && !force) return cache as Airport;
+  const info: Airport = await socket.value
     .timeout(5000)
     .emitWithAck("airport", id);
-
-  airportMarkers.set(id, airport);
-  selectedAirport.value = id;
+  const state = airportMarkers.get(id)!;
+  if (state !== undefined) state.info = info;
+  return info;
 }
 
 export async function drawAirports() {
@@ -47,10 +59,11 @@ export async function drawAirports() {
         ],
         [0, 0],
       );
-    L.circleMarker(centre, { radius: 10, color: "red" })
+    const marker = L.circleMarker(centre, { radius: 10, color: "red" })
       .bindPopup(`${escape(airport.name)} (${airport.code})`)
       .on("popupopen", () => selectAirport(airport.code))
       .on("popupclose", () => deselectAirport())
       .addTo(map.map.value!);
+    airportMarkers.set(airport.code, { marker });
   }
 }

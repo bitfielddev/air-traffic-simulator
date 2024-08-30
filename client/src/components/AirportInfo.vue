@@ -1,44 +1,46 @@
 <script setup lang="ts">
-import type { Airport } from "@/bindings/Airport";
 import type { Plane } from "@/bindings/Plane";
+import * as plane from "@/plane";
 import socket from "@/socket";
 import { onMounted, ref } from "vue";
-import * as plane from "@/plane";
+import PlaneLink from "./PlaneLink.vue";
+import AirportLink from "./AirportLink.vue";
+import type { AirportState } from "@/airport";
 
-const { airportState } = defineProps<{ airportState: Airport }>();
+const { airportState } = defineProps<{ airportState: AirportState }>();
+const airport = airportState.info!.airport;
 const departurePlanes = ref<Plane[]>();
 const arrivalPlanes = ref<Plane[]>();
 
 onMounted(async () => {
   const departurePlaneIds: string[] = await socket.value
     .timeout(5000)
-    .emitWithAck("airport_departures", airportState.airport.code);
-  console.log(departurePlaneIds);
+    .emitWithAck("airport_departures", airport.code);
   departurePlanes.value = await Promise.all(
-    departurePlaneIds.map(plane.getPlaneInfo),
+    departurePlaneIds.map((a) => plane.getPlaneInfo(a)),
   );
   const arrivalPlaneIds: string[] = await socket.value
     .timeout(5000)
-    .emitWithAck("airport_arrivals", airportState.airport.code);
+    .emitWithAck("airport_arrivals", airport.code);
   arrivalPlanes.value = await Promise.all(
-    arrivalPlaneIds.map(plane.getPlaneInfo),
+    arrivalPlaneIds.map((a) => plane.getPlaneInfo(a)),
   );
 });
 </script>
 <template>
   <div style="text-align: center">
-    <b style="font-size: 3em">{{ airportState.airport.code }}</b
-    ><br />{{ airportState.airport.name }}<br /><br />
+    <b style="font-size: 3em">{{ airport.code }}</b
+    ><br />{{ airport.name }}<br /><br />
     <b>Runways</b>
     <table border="0">
       <tr>
         <th>Name</th>
         <th>Start</th>
         <th>End</th>
-        <th>Altitude</th>
+        <th>Alt</th>
         <th>Class</th>
       </tr>
-      <tr v-for="runway in airportState.airport.runways" :key="runway.name">
+      <tr v-for="runway in airport.runways" :key="runway.name">
         <td>
           <b>{{ runway.name }}</b>
         </td>
@@ -52,22 +54,18 @@ onMounted(async () => {
       <b>Departures:</b><br />
       <table border="0">
         <tr>
-          <td>Airline</td>
-          <td>Flight</td>
-          <td>To</td>
+          <th>Airline</th>
+          <th>Flight</th>
+          <th>To</th>
         </tr>
         <tr v-for="planeInfo in departurePlanes" :key="planeInfo.id">
           <td>{{ planeInfo.flight.airline }}</td>
           <td>{{ planeInfo.flight.code }}</td>
-          <td>{{ planeInfo.flight.to }}</td>
+          <td><AirportLink :airport-id="planeInfo.flight.to" /></td>
           <td>
-            <button
-              @click="
-                plane.markers.get(planeInfo.id)?.marker.fireEvent('click')
-              "
+            <PlaneLink :plane-id="planeInfo.id"
+              ><button>Select</button></PlaneLink
             >
-              Select
-            </button>
           </td>
         </tr>
       </table>
@@ -77,22 +75,18 @@ onMounted(async () => {
       <b>Arrivals:</b><br />
       <table border="0">
         <tr>
-          <td>Airline</td>
-          <td>Flight</td>
-          <td>To</td>
+          <th>Airline</th>
+          <th>Flight</th>
+          <th>To</th>
         </tr>
         <tr v-for="planeInfo in arrivalPlanes" :key="planeInfo.id">
           <td>{{ planeInfo.flight.airline }}</td>
           <td>{{ planeInfo.flight.code }}</td>
-          <td>{{ planeInfo.flight.to }}</td>
+          <td><AirportLink :airport-id="planeInfo.flight.from" /></td>
           <td>
-            <button
-              @click="
-                plane.markers.get(planeInfo.id)?.marker.fireEvent('click')
-              "
+            <PlaneLink :plane-id="planeInfo.id"
+              ><button>Select</button></PlaneLink
             >
-              Select
-            </button>
           </td>
         </tr>
       </table>
