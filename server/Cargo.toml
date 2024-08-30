@@ -9,11 +9,15 @@ engine = { path = "../engine", package = "air-traffic-simulator-engine" }
 axum = "0.7.5"
 eyre = "0.6.12"
 socketioxide = { version = "0.14.1", features = ["state", "tracing"] }
-tower-http = { version = "0.5.2", features = ["cors"] }
+tower-http = { version = "0.5.2", features = ["cors", "fs"] }
 tokio = { version = "1.39.3", features = ["full"] }
 tracing = "0.1.40"
 serde = "1.0.209"
 itertools = "0.13.0"
+tempfile = "3.12.0"
+
+[build-dependencies]
+eyre = "0.6.12"
 
 [lints]
 workspace = true

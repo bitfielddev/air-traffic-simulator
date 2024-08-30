@@ -10,10 +10,10 @@ async fn main() -> Result<()> {
         .try_init()?;
 
     let world_data = serde_yaml::from_str(include_str!("wd.yml"))?;
-    let config = serde_yaml::from_str(include_str!("config.yml"))?;
-    let engine = air_traffic_simulator::engine::engine::Engine::new(world_data, config);
+    let engine_config = serde_yaml::from_str(include_str!("engine_config.yml"))?;
+    let engine = air_traffic_simulator::engine::engine::Engine::new(world_data, engine_config);
 
-    air_traffic_simulator::server::server(engine).await?;
+    air_traffic_simulator::server::server(engine, None).await?;
 
     Ok(())
 }

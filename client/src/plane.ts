@@ -2,7 +2,7 @@ import config from "@/config";
 import * as map from "@/map";
 import "Leaflet.MultiOptionsPolyline";
 import { stringify as uuidStringify } from "uuid";
-import { reactive, ref, type Ref } from "vue";
+import { reactive, ref } from "vue";
 import type { Plane } from "./bindings/Plane";
 import socket from "./socket";
 import { escape } from "./util";
@@ -42,11 +42,7 @@ export async function getPlaneInfo(id: string, force?: boolean) {
   return info;
 }
 
-export async function selectPlane(
-  id: string,
-  e: L.PopupEvent,
-  map: Ref<L.Map | undefined>,
-) {
+export async function selectPlane(id: string, e: L.PopupEvent) {
   deselectPlane();
   const plane = await getPlaneInfo(id, true);
   e.popup.setContent(
@@ -71,7 +67,7 @@ export async function selectPlane(
           options: config.altitudeColours.map((a) => ({ color: a[1] })),
         },
       },
-    ).addTo(map.value!),
+    ).addTo(map.map.value!),
     id,
   };
 }
@@ -99,7 +95,7 @@ export function handleStateUpdates() {
           angle,
           v: [vx, vy],
           marker: L.circleMarker(config.world2map([sx, sy]), { radius: 5 })
-            .on("popupopen", (e) => selectPlane(id, e, map.map))
+            .on("popupopen", (e) => selectPlane(id, e))
             .on("popupclose", () => deselectPlane())
             .bindPopup("Loading...")
             .addTo(map.map.value!),
