@@ -11,7 +11,7 @@ export interface SelectedPlane {
   path: L.MultiOptionsPolyline;
 }
 
-interface PlaneState {
+export interface PlaneState {
   s: [number, number, number];
   angle: number;
   v: [number, number];
