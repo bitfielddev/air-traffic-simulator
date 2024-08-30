@@ -1,6 +1,5 @@
-use std::{fs::File, io::Cursor, path::PathBuf, process::Command, sync::Arc};
+use std::{process::Command, sync::Arc};
 
-use axum::routing::get;
 use engine::{
     engine::Engine,
     util::{AirportCode, AirportStateId, PlaneStateId},
@@ -19,7 +18,7 @@ use tower_http::{
     cors::CorsLayer,
     services::{ServeDir, ServeFile},
 };
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 #[tracing::instrument(skip_all)]
 fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {

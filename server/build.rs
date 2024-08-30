@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, path::PathBuf, process::Command};
+use std::{path::PathBuf, process::Command};
 
 use eyre::{OptionExt, Result};
 
