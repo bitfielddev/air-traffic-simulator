@@ -22,3 +22,11 @@ export const altitudeColours = [
   [80, "#000000"],
   [90, "#000000"],
 ];
+
+export function world2map([x, y]) {
+  return [y, x];
+}
+
+export function world2map3([x, y, z]) {
+  return [y, x, z];
+}

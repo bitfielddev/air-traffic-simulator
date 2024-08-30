@@ -4,6 +4,7 @@ import * as map from "./map";
 import socket from "./socket";
 import { escape } from "./util";
 import { getWorldData } from "./staticData";
+import config from "./config";
 
 export interface AirportState {
   info?: Airport;
@@ -37,13 +38,16 @@ export async function drawAirports() {
   const wd = await getWorldData();
   for (const airport of wd.airports) {
     for (const runway of airport.runways) {
-      L.polyline([runway.start, runway.end], {
-        color: "red",
-        weight: 10,
-        opacity: 0.5,
-      })
+      L.polyline(
+        [config.world2map(runway.start), config.world2map(runway.end)],
+        {
+          color: "red",
+          weight: 10,
+          opacity: 0.5,
+        },
+      )
         .bindPopup(
-          `${escape(airport.name)} (${escape(airport.code)})<br>Altitude: ${runway.altitude}`,
+          `${escape(airport.name)} (${escape(airport.code)})<br>Runway ${escape(runway.name)}<br>Altitude: ${escape(runway.altitude.toString())}`,
         )
         .on("popupopen", () => selectAirport(airport.code))
         .on("popupclose", () => deselectAirport())
@@ -59,7 +63,10 @@ export async function drawAirports() {
         ],
         [0, 0],
       );
-    const marker = L.circleMarker(centre, { radius: 10, color: "red" })
+    const marker = L.circleMarker(config.world2map(centre), {
+      radius: 10,
+      color: "red",
+    })
       .bindPopup(`${escape(airport.name)} (${airport.code})`)
       .on("popupopen", () => selectAirport(airport.code))
       .on("popupclose", () => deselectAirport())

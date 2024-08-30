@@ -55,7 +55,7 @@ export async function selectPlane(
 
   selectedPlane.value = {
     path: L.multiOptionsPolyline(
-      plane.pos.planner.past_pos.map((a) => L.latLng(...a)),
+      plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
       {
         multiOptions: {
           optionIdxFn: (latLng) => {
@@ -98,7 +98,7 @@ export function handleStateUpdates() {
           s: [sx, sy, sz],
           angle,
           v: [vx, vy],
-          marker: L.circleMarker([sx, sy], { radius: 5 })
+          marker: L.circleMarker(config.world2map([sx, sy]), { radius: 5 })
             .on("popupopen", (e) => selectPlane(id, e, map.map))
             .on("popupclose", () => deselectPlane())
             .bindPopup("Loading...")
@@ -108,11 +108,11 @@ export function handleStateUpdates() {
         state.s = [sx, sy, sz];
         state.angle = angle;
         state.v = [vx, vy];
-        state.marker.setLatLng([sx, sy]);
+        state.marker.setLatLng(config.world2map([sx, sy]));
       }
 
       if (selectedPlane.value?.id === id) {
-        updateSelectPlane(L.latLng(sx, sy, sz));
+        updateSelectPlane(L.latLng(...config.world2map3([sx, sy, sz])));
       }
     }
   });
@@ -123,7 +123,7 @@ export function updatePositions(dt: number) {
   for (const state of planeMarkers.values()) {
     state.s[0] += state.v[0] * Math.cos(state.angle) * (dt / 1000);
     state.s[1] += state.v[0] * Math.sin(state.angle) * (dt / 1000);
-    state.marker.setLatLng(state.s);
+    state.marker.setLatLng(config.world2map3(state.s));
   }
   setTimeout(() => {
     updatePositions(Date.now() - start);

@@ -77,7 +77,7 @@ onMounted(async () => {
         <tr>
           <th>Airline</th>
           <th>Flight</th>
-          <th>To</th>
+          <th>From</th>
         </tr>
         <tr v-for="planeInfo in arrivalPlanes" :key="planeInfo.id">
           <td>{{ planeInfo.flight.airline }}</td>
