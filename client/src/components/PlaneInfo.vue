@@ -1,21 +1,57 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onUnmounted, ref, watchEffect } from "vue";
 import "leaflet-easybutton/src/easy-button.css";
 import "leaflet-easybutton";
 import type { PlaneState } from "@/plane";
+import * as L from "leaflet";
+import { getWorldData } from "@/staticData";
+import * as map from "@/map";
 
 const { planeState } = defineProps<{ planeState: PlaneState }>();
 
 const waypointList = computed(() => {
-  const past =
-    planeState.info?.pos.planner.past_route.map((a) => a.name).join(", ") ?? "";
-  const present = planeState.info?.pos.planner.route.at(0)?.name ?? "";
-  const future =
-    planeState.info?.pos.planner.route.map((a) => a.name).join(", ") ?? "";
-  return { past, present, future };
+  const past = planeState.info?.pos.planner.past_route.map((a) => a.name);
+  const future = planeState.info?.pos.planner.route.map((a) => a.name);
+  return { past, future };
 });
 
-let showWaypoints: boolean;
+let showWaypoints = ref(false);
+let waypointFeatureGroup: L.FeatureGroup | undefined;
+watchEffect(async () => {
+  waypointFeatureGroup?.remove();
+  if (!showWaypoints.value) {
+    waypointFeatureGroup = undefined;
+  } else {
+    const wd = await getWorldData();
+    const pastWaypoints =
+      waypointList.value.past
+        ?.map((name) => wd.waypoints.find((a) => a.name === name))
+        .filter((a) => a !== undefined)
+        .map((a) =>
+          L.circleMarker(a.pos, { radius: 5, color: "#ff0000" }).bindTooltip(
+            a.name,
+          ),
+        ) ?? [];
+    const futureWaypoints =
+      waypointList.value.future
+        ?.map((name) => wd.waypoints.find((a) => a.name === name))
+        .filter((a) => a !== undefined)
+        .map((a) =>
+          L.circleMarker(a.pos, { radius: 5, color: "#00ff00" }).bindTooltip(
+            a.name,
+          ),
+        ) ?? [];
+
+    waypointFeatureGroup = L.featureGroup([
+      ...pastWaypoints,
+      ...futureWaypoints,
+    ]).addTo(map.map.value!);
+  }
+});
+
+onUnmounted(() => {
+  waypointFeatureGroup?.remove();
+});
 </script>
 <template>
   <div style="text-align: center">
@@ -37,8 +73,9 @@ let showWaypoints: boolean;
   </div>
   <small>
     <span
-      >Waypoints: {{ waypointList.past }} <b> {{ waypointList.present }} </b>
-      {{ waypointList.future }}</span
+      >Waypoints: <i>{{ waypointList.past?.join(", ").trim() ?? "" }}</i
+      >{{ waypointList.past?.length && waypointList.future?.length ? ", " : ""
+      }}<b>{{ waypointList.future?.join(", ").trim() ?? "" }}</b></span
     >
     <input id="showWaypoints" v-model="showWaypoints" type="checkbox" />
     <label for="showWaypoints">Show Waypoints</label>

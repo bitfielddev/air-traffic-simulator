@@ -26,3 +26,9 @@ planes:
       turning_radius: 10.0
     icon: null
 waypoints:
+  - name: TEST1
+    pos: [75.0, 25.0]
+    connections: [TEST2]
+  - name: TEST2
+    pos: [125.0, 25.0]
+    connections: [TEST1]

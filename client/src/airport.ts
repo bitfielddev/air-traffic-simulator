@@ -1,9 +1,9 @@
 import { reactive, ref } from "vue";
 import type { Airport } from "./bindings/Airport";
-import type { WorldData } from "./bindings/WorldData";
 import * as map from "./map";
 import socket from "./socket";
 import { escape } from "./util";
+import { getWorldData } from "./staticData";
 
 export const airportMarkers = reactive(new Map<string, Airport>());
 export const selectedAirport = ref<string>();
@@ -22,9 +22,7 @@ export async function selectAirport(id: string) {
 }
 
 export async function drawAirports() {
-  const wd: WorldData = await socket.value
-    .timeout(5000)
-    .emitWithAck("world_data");
+  const wd = await getWorldData();
   for (const airport of wd.airports) {
     for (const runway of airport.runways) {
       L.polyline([runway.start, runway.end], {
