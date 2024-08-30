@@ -3,7 +3,6 @@ use std::{collections::VecDeque, sync::Arc};
 use dubins_paths::DubinsPath;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
-use smol_str::ToSmolStr;
 use tracing::info;
 use ts_rs::TS;
 use uuid::Uuid;
@@ -179,7 +178,7 @@ impl Plane {
                         .mul_add(-(self.model.motion.max_v.x * 0.75), 1.0)
                         / touchdown_length
                         / 2.0,
-                    dt: 2.0 * touchdown_length / (1.0 + self.model.motion.max_v.x * 0.75),
+                    dt: 2.0 * touchdown_length / self.model.motion.max_v.x.mul_add(0.75, 1.0),
                 }); // TODO
                 PhaseData::Landing {
                     runway: landing_runway,

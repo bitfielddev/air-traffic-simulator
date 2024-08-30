@@ -2,7 +2,6 @@ use std::ops::{Add, Neg, Sub};
 
 use glam::{Vec2, Vec3};
 use serde::{Deserialize, Serialize};
-use ts_rs::TS;
 
 pub trait Vector:
     Copy + Add<Self, Output = Self> + Sub<Self, Output = Self> + Neg<Output = Self>

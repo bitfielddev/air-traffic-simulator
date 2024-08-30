@@ -32,21 +32,26 @@ export function deselectPlane() {
   selected.value?.path.remove();
   selected.value = undefined;
 }
+
+export async function getPlaneInfo(id: string, force?: boolean) {
+  const cache = markers.get(id)?.info;
+  if (cache !== undefined && !force) return cache as Plane;
+  const info: Plane = await socket.value.timeout(5000).emitWithAck("plane", id);
+  const state = markers.get(id)!;
+  if (state !== undefined) state.info = info;
+  return info;
+}
+
 export async function selectPlane(
   id: string,
   e: L.PopupEvent,
   map: Ref<L.Map | undefined>,
 ) {
   deselectPlane();
-  const plane: Plane = await socket.value
-    .timeout(5000)
-    .emitWithAck("plane", id);
+  const plane = await getPlaneInfo(id, true);
   e.popup.setContent(
     `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
   );
-
-  const state = markers.get(id)!;
-  state.info = plane;
 
   selected.value = {
     path: L.multiOptionsPolyline(

@@ -15,6 +15,8 @@ interface ClientToServerEvents {
   airport: (id: string, cb: (a: Airport) => void) => void;
   world_data: (cb: (a: WorldData) => void) => void;
   config: (cb: (a: Config) => void) => void;
+  airport_departures: (code: string, cb: (a: string[]) => void) => void;
+  airport_arrivals: (code: string, cb: (a: string[]) => void) => void;
 }
 
 export default ref(io(config.socketUri)) as Ref<

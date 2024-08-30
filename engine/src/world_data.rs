@@ -77,6 +77,8 @@ impl AirportData {
 #[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Runway {
+    #[ts(as = "String")]
+    pub name: SmolStr,
     #[ts(as = "(f32, f32)")]
     pub start: Pos2,
     #[ts(as = "(f32, f32)")]

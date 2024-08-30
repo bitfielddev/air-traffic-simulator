@@ -7,6 +7,7 @@ airports:
         end: [0.0, 50.0]
         altitude: 0.0
         class: ""
+        name: "18/36"
   - name: "Bar Airport"
     code: "BAR"
     runways:
@@ -14,6 +15,7 @@ airports:
         end: [200.0, 50.0]
         altitude: 50.0
         class: ""
+        name: "18/36"
 flights: null
 planes:
   - id: "Test"

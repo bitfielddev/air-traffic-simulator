@@ -30,6 +30,7 @@ watchEffect(async () => {
         .map((a) =>
           L.circleMarker(a.pos, { radius: 5, color: "#ff0000" }).bindTooltip(
             a.name,
+            { permanent: true, interactive: false },
           ),
         ) ?? [];
     const futureWaypoints =
@@ -39,6 +40,7 @@ watchEffect(async () => {
         .map((a) =>
           L.circleMarker(a.pos, { radius: 5, color: "#00ff00" }).bindTooltip(
             a.name,
+            { permanent: true, interactive: false },
           ),
         ) ?? [];
 

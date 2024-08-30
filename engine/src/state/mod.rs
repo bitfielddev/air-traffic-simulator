@@ -10,7 +10,7 @@ use tracing::{debug, info};
 
 use crate::{
     config::Config,
-    util::{AirportStateId, FlightCode, PlaneStateId},
+    util::{AirportCode, AirportStateId, FlightCode, PlaneStateId},
     world_data::{AirportData, Flight, WorldData},
 };
 
@@ -49,6 +49,18 @@ impl State {
     #[must_use]
     pub fn airport_mut(&mut self, id: &AirportStateId) -> Option<&mut Airport> {
         self.airports.iter_mut().find(|a| a.id == *id)
+    }
+    pub fn airport_departures<'a>(
+        &'a self,
+        code: &'a AirportCode,
+    ) -> impl Iterator<Item = &Plane> + '_ {
+        self.planes.iter().filter(|a| a.flight.from == *code)
+    }
+    pub fn airport_arrivals<'a>(
+        &'a self,
+        code: &'a AirportCode,
+    ) -> impl Iterator<Item = &Plane> + '_ {
+        self.planes.iter().filter(|a| a.flight.to == *code)
     }
     #[tracing::instrument(skip_all)]
     pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Vec<u8>) {

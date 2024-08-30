@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
-use axum::{body::Bytes, routing::get};
+use axum::routing::get;
 use engine::{
     engine::Engine,
-    util::{AirportStateId, PlaneStateId},
+    util::{AirportCode, AirportStateId, PlaneStateId},
 };
-use eyre::{Report, Result};
+use eyre::Result;
 use socketioxide::{
     extract::{AckSender, Data, SocketRef, State},
     SocketIo,
@@ -39,6 +39,26 @@ fn websocket_connect(socket: SocketRef) {
             let _ = ack
                 .send(engine.state.airport(&id))
                 .inspect_err(|e| error!(ev="airport", "{e:#}"));
+        },
+    );
+
+    socket.on(
+        "airport_departures",
+        |ack: AckSender, Data(code): Data<AirportCode>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
+            let _ = ack
+                .send([engine.state.airport_departures(&code).map(|a| a.id).collect::<Vec<_>>()])
+                .inspect_err(|e| error!(ev="airport_departures", "{e:#}"));
+        },
+    );
+
+    socket.on(
+        "airport_arrivals",
+        |ack: AckSender, Data(code): Data<AirportCode>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
+            let engine = engine_arc.read().await;
+            let _ = ack
+                .send([engine.state.airport_arrivals(&code).map(|a| a.id).collect::<Vec<_>>()])
+                .inspect_err(|e| error!(ev="airport_arrivals", "{e:#}"));
         },
     );
 
@@ -84,8 +104,8 @@ pub async fn server(engine: Engine) -> Result<()> {
             let (removed, state) = engine.tick();
             drop(engine);
             let _ = io
-                .bin(vec![state])
-                .emit("state", vec![removed])
+                .bin([state])
+                .emit("state", [removed])
                 .inspect_err(|e| error!(ev = "state", "{e:#}"));
             info!(delta=?start.elapsed());
             tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;
