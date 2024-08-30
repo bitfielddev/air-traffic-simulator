@@ -17,6 +17,7 @@ import Sidebar from "./components/Sidebar.vue";
 
 #aside {
   width: 20vw;
+  background-color: lightgray;
 }
 
 #map {
@@ -25,12 +26,15 @@ import Sidebar from "./components/Sidebar.vue";
 
 @media only screen and (max-width: 600px) {
   #aside {
-    width: 0vw;
-    transition: width 1s;
+    width: 100vw;
+    z-index: 2000;
+    position: absolute;
+    transition: transform 0.5s ease-in-out;
+    transform: translateX(-100vw);
   }
 
   #aside.visible {
-    width: 80vw;
+    transform: translateX(0vw);
   }
 
   #map {

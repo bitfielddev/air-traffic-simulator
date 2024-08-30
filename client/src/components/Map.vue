@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import "leaflet/dist/leaflet.css";
-import { onMounted, onUnmounted } from "vue";
-import socket from "@/socket";
-import * as plane from "@/plane";
-import * as map from "@/map";
 import * as airport from "@/airport";
+import * as map from "@/map";
+import * as plane from "@/plane";
+import "leaflet/dist/leaflet.css";
+import { onMounted } from "vue";
 
 onMounted(() => {
   map.initMap();
-  airport.drawRunways();
+  airport.drawAirports();
   plane.handleStateUpdates();
   plane.updatePositions(0);
-});
-
-onUnmounted(() => {
-  socket.value.close();
 });
 </script>
 

@@ -22,21 +22,21 @@ interface PlaneState {
 export const markers = reactive(new Map<string, PlaneState>());
 export const selected = ref<SelectedPlane>();
 
-export function updateSelect(latLng: L.LatLng) {
+export function updateSelectPlane(latLng: L.LatLng) {
   selected.value?.path.setLatLngs(
     selected.value?.path.getLatLngs().concat([latLng]),
   );
 }
-export function deselect() {
+export function deselectPlane() {
   selected.value?.path.remove();
   selected.value = undefined;
 }
-export async function select(
+export async function selectPlane(
   id: string,
   e: L.PopupEvent,
   map: Ref<L.Map | undefined>,
 ) {
-  deselect();
+  deselectPlane();
   const plane: Plane = await socket.value
     .timeout(5000)
     .emitWithAck("plane", id);
@@ -103,8 +103,8 @@ export function handleStateUpdates() {
           angle,
           v: [vx, vy],
           marker: L.circleMarker([sx, sy], { radius: 5 })
-            .on("popupopen", (e) => select(id, e, map.map))
-            .on("popupclose", () => deselect())
+            .on("popupopen", (e) => selectPlane(id, e, map.map))
+            .on("popupclose", () => deselectPlane())
             .bindPopup("Loading...")
             .addTo(map.map.value!),
         });
@@ -116,7 +116,7 @@ export function handleStateUpdates() {
       }
 
       if (selected.value?.id === id) {
-        updateSelect(L.latLng(sx, sy, sz));
+        updateSelectPlane(L.latLng(sx, sy, sz));
       }
     }
   });

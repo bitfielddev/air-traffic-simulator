@@ -1,9 +1,9 @@
 import { reactive, ref } from "vue";
+import type { Airport } from "./bindings/Airport";
 import type { WorldData } from "./bindings/WorldData";
 import * as map from "./map";
 import socket from "./socket";
 import { escape } from "./util";
-import type { Airport } from "./bindings/Airport";
 
 export const airportMarkers = reactive(new Map<string, Airport>());
 export const selectedAirport = ref<string>();
@@ -21,7 +21,7 @@ export async function selectAirport(id: string) {
   selectedAirport.value = id;
 }
 
-export async function drawRunways() {
+export async function drawAirports() {
   const wd: WorldData = await socket.value
     .timeout(5000)
     .emitWithAck("world_data");
@@ -35,6 +35,8 @@ export async function drawRunways() {
         .bindPopup(
           `${escape(airport.name)} (${escape(airport.code)})<br>Altitude: ${runway.altitude}`,
         )
+        .on("popupopen", () => selectAirport(airport.code))
+        .on("popupclose", () => deselectAirport())
         .addTo(map.map.value!);
     }
 
