@@ -4,8 +4,11 @@ import * as airport from "@/airport";
 import { computed, ref, watch } from "vue";
 import "leaflet-easybutton/src/easy-button.css";
 import "leaflet-easybutton";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 import * as L from "leaflet";
 import * as map from "@/map";
+import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
 const planeState = computed(() =>
   plane.selected.value === undefined
@@ -37,7 +40,7 @@ const sidebarButton = ref<L.Control.EasyButton>();
 
 watch(map.map, () => {
   if (map.map.value === undefined || sidebarButton.value !== undefined) return;
-  sidebarButton.value = L.easyButton("fa-globe", () => {
+  sidebarButton.value = L.easyButton("fa-bars", () => {
     showInMobile.value = true;
   }).addTo(map.map.value!);
   toggleSidebarButtonDisplay();
@@ -56,7 +59,9 @@ window.addEventListener("resize", toggleSidebarButtonDisplay);
 
 <template>
   <aside id="aside" :class="{ visible: showInMobile }">
-    <button id="close" @click="showInMobile = false">Close</button>
+    <button id="close" @click="showInMobile = false">
+      <FontAwesomeIcon :icon="faXmark" />
+    </button>
     <div v-if="planeState !== undefined">
       <div style="text-align: center">
         <b style="font-size: 3em"
@@ -110,5 +115,9 @@ aside div {
   position: absolute;
   right: 1em;
   top: 1em;
+  aspect-ratio: 1/1;
+  font-size: 1em;
+  border: none;
+  background-color: unset;
 }
 </style>
