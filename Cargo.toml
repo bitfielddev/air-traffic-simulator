@@ -7,8 +7,11 @@ edition = "2021"
 
 [dependencies]
 engine = { path = "./engine", package = "air-traffic-simulator-engine" }
-server = { path = "./server", package = "air-traffic-simulator-server" }
+server = { path = "./server", package = "air-traffic-simulator-server", default-features = false }
 
+[features]
+default = ["client"]
+client = ["server/client"]
 
 [workspace]
 members = ["engine", "server", "example"]

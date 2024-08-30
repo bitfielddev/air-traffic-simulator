@@ -1,4 +1,6 @@
-use std::{process::Command, sync::Arc};
+#[cfg(feature = "client")]
+use std::process::Command;
+use std::sync::Arc;
 
 use engine::{
     engine::Engine,
@@ -14,12 +16,12 @@ use tokio::{
     sync::RwLock,
     time::{Duration, Instant},
 };
-use tower_http::{
-    cors::CorsLayer,
-    services::{ServeDir, ServeFile},
-};
-use tracing::{error, info, warn};
+use tower_http::cors::CorsLayer;
+#[cfg(feature = "client")]
+use tower_http::services::{ServeDir, ServeFile};
+use tracing::{error, info};
 
+#[cfg(feature = "client")]
 #[tracing::instrument(skip_all)]
 fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
     let zip_file = include_bytes!(concat!(env!("OUT_DIR"), "/client.tar.gz"));
@@ -35,8 +37,8 @@ fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
             &dir.path().to_string_lossy(),
         ])
         .output()?;
-    warn!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    warn!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+    info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
     info!(to=?dir.path(), "Building client");
     if let Some(client_config) = client_config {
@@ -49,10 +51,18 @@ fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
         .args(["run", "build"])
         .current_dir(dir.path())
         .output()?;
-    warn!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    warn!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+    info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
 
-    Ok(dir)
+    let dir2 = tempfile::tempdir()?;
+    info!(to=?dir2.path(), "Copy dist");
+    fs_extra::dir::copy(
+        dir.path().join("dist"),
+        dir2.path(),
+        &fs_extra::dir::CopyOptions::new(),
+    )?;
+
+    Ok(dir2)
 }
 
 #[expect(clippy::needless_pass_by_value)]
@@ -121,6 +131,7 @@ fn websocket_connect(socket: SocketRef) {
 }
 
 #[tracing::instrument(skip_all)]
+#[allow(clippy::allow_attributes, unused_variables)]
 pub async fn server(engine: Engine, client_config: Option<&str>) -> Result<()> {
     let engine_arc = Arc::new(RwLock::new(engine));
     let (layer, io) = SocketIo::builder()
@@ -128,17 +139,21 @@ pub async fn server(engine: Engine, client_config: Option<&str>) -> Result<()> {
         .build_layer();
     io.ns("/", websocket_connect);
 
-    let client = build_client(client_config)?;
-    let client_dist = client.path().join("dist");
+    #[cfg(feature = "client")]
+    let (app, _client) = {
+        let client = build_client(client_config)?;
+        let client_dist = client.path().join("dist");
 
-    let app = axum::Router::new()
-        .nest_service(
-            "/",
-            ServeDir::new(&client_dist)
-                .not_found_service(ServeFile::new(client_dist.join("index.html"))),
+        info!(path=?client.path(), "Serving files from client folder");
+        (
+            axum::Router::<()>::new().nest_service("/", ServeDir::new(&client_dist)),
+            client,
         )
-        .layer(layer)
-        .layer(CorsLayer::permissive());
+    };
+    #[cfg(not(feature = "client"))]
+    let app = axum::Router::new();
+
+    let app = app.layer(layer).layer(CorsLayer::permissive());
 
     tokio::spawn(async move {
         #[expect(clippy::infinite_loop)]
