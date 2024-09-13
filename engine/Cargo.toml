@@ -14,14 +14,14 @@ eyre = "0.6.12"
 itertools = "0.13.0"
 rand = "0.8.5"
 rayon = "1.10.0"
-serde = { version = "1.0.209", features = ["rc", "derive"] }
-smol_str = { version = "0.2.2", features = ["serde"] }
+serde = { version = "1.0.210", features = ["rc", "derive"] }
+smol_str = { version = "0.3.1", features = ["serde"] }
 tracing = "0.1.40"
 ts-rs = { version = "9.0.1", features = ["uuid-impl"] }
 uuid = { version = "1.10.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
-assertables = "7.0.1"
+assertables = "8.4.0"
 proptest = "1.5.0"
 tracing-test = "0.2.5"
 
