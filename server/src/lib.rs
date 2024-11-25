@@ -74,7 +74,7 @@ fn websocket_connect(socket: SocketRef) {
         |ack: AckSender, Data(uuid): Data<PlaneStateId>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
             let engine = engine_arc.read().await;
             let _ = ack
-                .send(engine.state.plane(&uuid))
+                .send(&engine.state.plane(&uuid))
                 .inspect_err(|e| error!(ev="plane", "{e:#}"));
         },
     );
@@ -84,7 +84,7 @@ fn websocket_connect(socket: SocketRef) {
         |ack: AckSender, Data(id): Data<AirportStateId>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
             let engine = engine_arc.read().await;
             let _ = ack
-                .send(engine.state.airport(&id))
+                .send(&engine.state.airport(&id))
                 .inspect_err(|e| error!(ev="airport", "{e:#}"));
         },
     );
@@ -94,7 +94,7 @@ fn websocket_connect(socket: SocketRef) {
         |ack: AckSender, Data(code): Data<AirportCode>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
             let engine = engine_arc.read().await;
             let _ = ack
-                .send([engine.state.airport_departures(&code).map(|a| a.id).collect::<Vec<_>>()])
+                .send(&[engine.state.airport_departures(&code).map(|a| a.id).collect::<Vec<_>>()])
                 .inspect_err(|e| error!(ev="airport_departures", "{e:#}"));
         },
     );
@@ -104,7 +104,7 @@ fn websocket_connect(socket: SocketRef) {
         |ack: AckSender, Data(code): Data<AirportCode>, engine_arc: State<Arc<RwLock<Engine>>>| async move {
             let engine = engine_arc.read().await;
             let _ = ack
-                .send([engine.state.airport_arrivals(&code).map(|a| a.id).collect::<Vec<_>>()])
+                .send(&[engine.state.airport_arrivals(&code).map(|a| a.id).collect::<Vec<_>>()])
                 .inspect_err(|e| error!(ev="airport_arrivals", "{e:#}"));
         },
     );
@@ -163,8 +163,7 @@ pub async fn server(engine: Engine, client_config: Option<&str>) -> Result<()> {
             let (removed, state) = engine.tick();
             drop(engine);
             let _ = io
-                .bin([state])
-                .emit("state", [removed])
+                .emit("state", &(removed, state))
                 .inspect_err(|e| error!(ev = "state", "{e:#}"));
             info!(delta=?start.elapsed());
             tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;

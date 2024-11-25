@@ -33,62 +33,74 @@ onMounted(async () => {
     ><br />{{ airport.name }}<br /><br />
     <b>Runways</b>
     <table border="0">
-      <tr>
-        <th>Name</th>
-        <th>Start</th>
-        <th>End</th>
-        <th>Alt</th>
-        <th>Class</th>
-      </tr>
-      <tr v-for="runway in airport.runways" :key="runway.name">
-        <td>
-          <b>{{ runway.name }}</b>
-        </td>
-        <td>{{ runway.start[0] }} {{ runway.start[1] }}</td>
-        <td>{{ runway.end[0] }} {{ runway.end[1] }}</td>
-        <td>{{ runway.altitude }}</td>
-        <td>{{ runway.class }}</td>
-      </tr>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Alt</th>
+          <th>Class</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="runway in airport.runways" :key="runway.name">
+          <td>
+            <b>{{ runway.name }}</b>
+          </td>
+          <td>{{ runway.start[0] }} {{ runway.start[1] }}</td>
+          <td>{{ runway.end[0] }} {{ runway.end[1] }}</td>
+          <td>{{ runway.altitude }}</td>
+          <td>{{ runway.class }}</td>
+        </tr>
+      </tbody>
     </table>
     <template v-if="departurePlanes !== undefined">
       <b>Departures:</b><br />
       <table border="0">
-        <tr>
-          <th>Airline</th>
-          <th>Flight</th>
-          <th>To</th>
-        </tr>
-        <tr v-for="planeInfo in departurePlanes" :key="planeInfo.id">
-          <td>{{ planeInfo.flight.airline }}</td>
-          <td>{{ planeInfo.flight.code }}</td>
-          <td><AirportLink :airport-id="planeInfo.flight.to" /></td>
-          <td>
-            <PlaneLink :plane-id="planeInfo.id"
-              ><button>Select</button></PlaneLink
-            >
-          </td>
-        </tr>
+        <thead>
+          <tr>
+            <th>Airline</th>
+            <th>Flight</th>
+            <th>To</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="planeInfo in departurePlanes" :key="planeInfo.id">
+            <td>{{ planeInfo.flight.airline }}</td>
+            <td>{{ planeInfo.flight.code }}</td>
+            <td><AirportLink :airport-id="planeInfo.flight.to" /></td>
+            <td>
+              <PlaneLink :plane-id="planeInfo.id"
+                ><button>Select</button></PlaneLink
+              >
+            </td>
+          </tr>
+        </tbody>
       </table>
     </template>
     <span v-else>Loading departures...</span>
     <template v-if="arrivalPlanes !== undefined">
       <b>Arrivals:</b><br />
       <table border="0">
-        <tr>
-          <th>Airline</th>
-          <th>Flight</th>
-          <th>From</th>
-        </tr>
-        <tr v-for="planeInfo in arrivalPlanes" :key="planeInfo.id">
-          <td>{{ planeInfo.flight.airline }}</td>
-          <td>{{ planeInfo.flight.code }}</td>
-          <td><AirportLink :airport-id="planeInfo.flight.from" /></td>
-          <td>
-            <PlaneLink :plane-id="planeInfo.id"
-              ><button>Select</button></PlaneLink
-            >
-          </td>
-        </tr>
+        <thead>
+          <tr>
+            <th>Airline</th>
+            <th>Flight</th>
+            <th>From</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="planeInfo in arrivalPlanes" :key="planeInfo.id">
+            <td>{{ planeInfo.flight.airline }}</td>
+            <td>{{ planeInfo.flight.code }}</td>
+            <td><AirportLink :airport-id="planeInfo.flight.from" /></td>
+            <td>
+              <PlaneLink :plane-id="planeInfo.id"
+                ><button>Select</button></PlaneLink
+              >
+            </td>
+          </tr>
+        </tbody>
       </table>
     </template>
     <span v-else>Loading arrivals...</span>

@@ -1,3 +1,5 @@
+use bytes::Bytes;
+
 use crate::{config::Config, state::State, util::PlaneStateId, world_data::WorldData};
 
 #[derive(Clone)]
@@ -16,7 +18,7 @@ impl Engine {
             config,
         }
     }
-    pub fn tick(&mut self) -> (Vec<PlaneStateId>, Vec<u8>) {
+    pub fn tick(&mut self) -> (Vec<PlaneStateId>, Bytes) {
         self.state.tick(&self.config, &self.world)
     }
 }

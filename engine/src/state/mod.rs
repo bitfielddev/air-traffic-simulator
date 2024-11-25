@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use airport::Airport;
+use bytes::Bytes;
 use plane::Plane;
 use rand::{prelude::*, Rng};
 use rayon::prelude::*;
@@ -63,7 +64,7 @@ impl State {
         self.planes.iter().filter(|a| a.flight.to == *code)
     }
     #[tracing::instrument(skip_all)]
-    pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Vec<u8>) {
+    pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Bytes) {
         let mut remove_list = vec![];
         for (id, (remove, send)) in self
             .planes
@@ -129,7 +130,7 @@ impl State {
         (remove_list, self.coord_state())
     }
     #[must_use]
-    pub fn coord_state(&self) -> Vec<u8> {
+    pub fn coord_state(&self) -> Bytes {
         self.planes
             .iter()
             .flat_map(|p| {
@@ -142,6 +143,7 @@ impl State {
                     .chain(p.pos.kinematics.v.x.to_le_bytes())
                     .chain(p.pos.kinematics.v.y.to_le_bytes())
             })
-            .collect::<Vec<_>>()
+            .collect::<Vec<u8>>()
+            .into()
     }
 }
