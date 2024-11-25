@@ -23,8 +23,6 @@ uuid = { version = "1.11.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
 assertables = "9.4.0"
-proptest = "1.5.0"
-tracing-test = "0.2.5"
 
 [lints]
 workspace = true
