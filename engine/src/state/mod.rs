@@ -54,13 +54,13 @@ impl State {
     pub fn airport_departures<'a>(
         &'a self,
         code: &'a AirportCode,
-    ) -> impl Iterator<Item = &Plane> + '_ {
+    ) -> impl Iterator<Item = &'a Plane> + 'a {
         self.planes.iter().filter(|a| a.flight.from == *code)
     }
     pub fn airport_arrivals<'a>(
         &'a self,
         code: &'a AirportCode,
-    ) -> impl Iterator<Item = &Plane> + '_ {
+    ) -> impl Iterator<Item = &'a Plane> + 'a {
         self.planes.iter().filter(|a| a.flight.to == *code)
     }
     #[tracing::instrument(skip_all)]

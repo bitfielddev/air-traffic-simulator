@@ -295,7 +295,6 @@ impl Kinematics {
 }
 
 #[cfg(test)]
-#[expect(clippy::float_cmp)]
 mod tests {
     use assertables::*;
 
