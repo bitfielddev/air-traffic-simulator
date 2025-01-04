@@ -47,7 +47,7 @@ fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
             client_config,
         )?;
     }
-    let output = Command::new("npm")
+    let output = Command::new(std::env::var("NPM_PATH").as_deref().unwrap_or("npm"))
         .args(["run", "build"])
         .current_dir(dir.path())
         .output()?;
@@ -132,7 +132,7 @@ fn websocket_connect(socket: SocketRef) {
 
 #[tracing::instrument(skip_all)]
 #[allow(clippy::allow_attributes, unused_variables)]
-pub async fn server(engine: Engine, client_config: Option<&str>) -> Result<()> {
+pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<()> {
     let engine_arc = Arc::new(RwLock::new(engine));
     let (layer, io) = SocketIo::builder()
         .with_state(Arc::clone(&engine_arc))
@@ -146,7 +146,7 @@ pub async fn server(engine: Engine, client_config: Option<&str>) -> Result<()> {
 
         info!(path=?client.path(), "Serving files from client folder");
         (
-            axum::Router::<()>::new().nest_service("/", ServeDir::new(&client_dist)),
+            axum::Router::<()>::new().fallback_service(ServeDir::new(&client_dist)),
             client,
         )
     };

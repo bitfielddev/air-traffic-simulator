@@ -65,6 +65,7 @@ impl Target {
                 // } else {
                 let a = dt.mul_add(-v, dt.mul_add(-u, 2.0f32.mul_add(ds, common.copysign(ds))))
                     / dt.powi(2);
+                // TODO check if a > max_a
                 vec![
                     Self { a, dt: (w - u) / a },
                     Self {
