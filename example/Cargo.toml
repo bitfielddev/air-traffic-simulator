@@ -8,8 +8,8 @@ air-traffic-simulator = { path = "..", default-features = false }
 
 color-eyre = "0.6.3"
 serde_yaml = "0.9.34"
-tokio = { version = "1.41.1", features = ["full"] }
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tokio = { version = "1.42.0", features = ["full"] }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
 
 [features]
 default = ["client"]
