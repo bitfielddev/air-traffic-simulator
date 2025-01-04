@@ -98,7 +98,7 @@ impl Plane {
                 (runway_progress >= 0.75).then(|| {
                     self.pos.kinematics.target_y(
                         Some(0.0),
-                        Some(512.0 - self.pos.pos_ang.0.z),
+                        Some(config.cruising_altitude - self.pos.pos_ang.0.z),
                         None,
                         None,
                         self.model.motion,
@@ -278,7 +278,7 @@ mod tests {
         let config = Config {
             tick_duration: 1.0,
             plane_spawn_chance: 0.0,
-            max_planes: None,
+            ..Default::default()
         };
         for _ in 0..100 {
             state.tick(&config, &WorldData::default());
@@ -343,7 +343,7 @@ mod tests {
         let config = Config {
             tick_duration: 0.25,
             plane_spawn_chance: 0.0,
-            max_planes: None,
+            ..Default::default()
         };
         for _ in 0..250 {
             state.tick(&config, &WorldData::default());
@@ -407,7 +407,7 @@ mod tests {
         let config = Config {
             tick_duration: 0.25,
             plane_spawn_chance: 0.0,
-            max_planes: None,
+            ..Default::default()
         };
         for _ in 0..250 {
             state.tick(&config, &wd);

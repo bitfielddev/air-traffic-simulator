@@ -47,12 +47,15 @@ fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
             client_config,
         )?;
     }
-    let output = Command::new(std::env::var("NPM_PATH").as_deref().unwrap_or("npm"))
-        .args(["run", "build"])
-        .current_dir(dir.path())
-        .output()?;
-    info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
-    info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+
+    for args in [vec!["install"], vec!["run", "build"]] {
+        let output = Command::new(std::env::var("NPM_PATH").as_deref().unwrap_or("npm"))
+            .args(args)
+            .current_dir(dir.path())
+            .output()?;
+        info!("stdout: {}", String::from_utf8_lossy(&output.stdout));
+        info!("stderr: {}", String::from_utf8_lossy(&output.stderr));
+    }
 
     let dir2 = tempfile::tempdir()?;
     info!(to=?dir2.path(), "Copy dist");

@@ -9,8 +9,6 @@ export const tileLayer = L.tileLayer(
   },
 );
 
-export const socketUri = "0.0.0.0:3000";
-
 export const altitudeColours = [
   [10, "#aaaaaa"],
   [20, "#aaaa00"],

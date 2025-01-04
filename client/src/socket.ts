@@ -19,6 +19,6 @@ interface ClientToServerEvents {
   airport_arrivals: (code: string, cb: (a: string[]) => void) => void;
 }
 
-export default ref(io(config.socketUri)) as Ref<
+export default ref(io(window.location.href)) as Ref<
   Socket<ServerToClientEvents, ClientToServerEvents>
 >;
