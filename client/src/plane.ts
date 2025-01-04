@@ -97,7 +97,7 @@ export function handleStateUpdates() {
           marker: L.circleMarker(config.world2map([sx, sy]), { radius: 5 })
             .on("popupopen", (e) => selectPlane(id, e))
             .on("popupclose", () => deselectPlane())
-            .bindPopup("Loading...")
+            .bindPopup("Loading...", { autoPan: false })
             .addTo(map.map.value!),
         });
       } else {
