@@ -200,7 +200,7 @@ impl WorldData {
                     a,
                     a.pos.distance(from.0)
                         / if (a.pos - from.0).dot(to - from.0) > 0.0 {
-                            5.0
+                            2.0
                         } else {
                             1.0
                         },
@@ -219,7 +219,7 @@ impl WorldData {
                     a,
                     a.pos.distance(to)
                         / if (a.pos - to).dot(from.0 - to) > 0.0 {
-                            5.0
+                            2.0
                         } else {
                             1.0
                         },
