@@ -185,7 +185,9 @@ impl Plane {
                 }
             }),
             PhaseData::Landing { runway: _runway } => {
-                if self.pos.planner.instructions.is_empty() {
+                if self.pos.planner.instructions.is_empty()
+                    || self.pos.kinematics.v.x < self.model.motion.max_v.x / 10.0
+                {
                     remove = true;
                 }
                 None

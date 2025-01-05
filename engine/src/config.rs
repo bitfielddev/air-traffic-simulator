@@ -4,13 +4,9 @@ use ts_rs::TS;
 #[derive(Clone, Debug, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct Config {
-    #[serde(default)]
     pub tick_duration: f32,
-    #[serde(default)]
     pub plane_spawn_chance: f32,
-    #[serde(default)]
     pub max_planes: Option<usize>,
-    #[serde(default)]
     pub cruising_altitude: f32,
 }
 
