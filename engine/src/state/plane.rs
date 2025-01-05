@@ -54,7 +54,7 @@ impl Plane {
         let mut s = Self {
             id: Uuid::new_v4(),
             pos: PlanePos {
-                pos_ang_start,
+                pos_ang: pos_ang_start,
                 kinematics: Kinematics::default(),
                 planner: FlightPlanner::new(
                     VecDeque::from([FlightInstruction::Straight(runway.ray())]),
