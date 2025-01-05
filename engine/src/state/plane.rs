@@ -48,7 +48,7 @@ impl Plane {
             Angle((runway.end - runway.start).to_angle()),
         );
         let pos_ang_end = Pos2Angle(
-            runway.end3,
+            runway.end,
             Angle((runway.end - runway.start).to_angle()),
         );
         let mut s = Self {
