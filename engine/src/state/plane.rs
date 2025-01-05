@@ -43,19 +43,23 @@ impl Plane {
         runway: &Arc<Runway>,
         wd: &WorldData,
     ) -> Self {
-        let pos_ang = Pos3Angle(
+        let pos_ang_start = Pos3Angle(
             runway.start3(),
+            Angle((runway.end - runway.start).to_angle()),
+        );
+        let pos_ang_end = Pos2Angle(
+            runway.end3,
             Angle((runway.end - runway.start).to_angle()),
         );
         let mut s = Self {
             id: Uuid::new_v4(),
             pos: PlanePos {
-                pos_ang,
+                pos_ang_start,
                 kinematics: Kinematics::default(),
                 planner: FlightPlanner::new(
                     VecDeque::from([FlightInstruction::Straight(runway.ray())]),
                     wd.find_waypoint_route(
-                        pos_ang.to_2(),
+                        pos_ang_end,
                         wd.airport(&flight.to).map_or(Pos2::ZERO, |a| a.centre()),
                     ),
                 ),
