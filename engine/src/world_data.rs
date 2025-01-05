@@ -198,7 +198,7 @@ impl WorldData {
             .map(|a| {
                 (
                     a,
-                    a.pos.distance(from.0)
+                    a.pos.distance(from.0))
             })
             .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
             .next()
