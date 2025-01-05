@@ -199,12 +199,6 @@ impl WorldData {
                 (
                     a,
                     a.pos.distance(from.0)
-                        / if (a.pos - from.0).dot(to - from.0) > 0.0 {
-                            2.0
-                        } else {
-                            1.0
-                        },
-                )
             })
             .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
             .next()
@@ -218,11 +212,6 @@ impl WorldData {
                 (
                     a,
                     a.pos.distance(to)
-                        / if (a.pos - to).dot(from.0 - to) > 0.0 {
-                            2.0
-                        } else {
-                            1.0
-                        },
                 )
             })
             .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
@@ -244,12 +233,13 @@ impl WorldData {
         {
             let mut current = self.waypoint(current_name).unwrap();
             if current == to_waypoint {
-                let mut total_path = VecDeque::from([Arc::clone(current)]);
+                let mut total_path = VecDeque::new();
                 while let Some(new_current) = came_from.get(&current.name) {
                     current = new_current;
                     total_path.push_front(Arc::clone(current));
                 }
                 trace!(?total_path, "Found path");
+                total_path.pop_front();
                 return total_path;
             }
             f_score.remove(&current.name);
