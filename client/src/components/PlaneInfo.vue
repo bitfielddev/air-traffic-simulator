@@ -19,23 +19,25 @@ const waypointList = computed(() => {
 
 const { planeState } = defineProps<{ planeState: PlaneState }>();
 
+const fromCoords = ref<[number, number]>([0, 0]);
+const toCoords = ref<[number, number]>([0, 0]);
+watchEffect(async () => {
+  const wd = await getWorldData();
+  fromCoords.value = airportCoords(
+    wd.airports.find((a) => a.code === planeState.info?.flight.from)!,
+  );
+  toCoords.value = airportCoords(
+    wd.airports.find((a) => a.code === planeState.info?.flight.to)!,
+  );
+});
+
 const startTime = computed(
   () => new Date(Number(planeState.info?.start_time) * 1000),
 );
-const currentDuration = ref(0);
-const remainingDuration = ref(0);
-const durationUpdater = setInterval(async () => {
-  currentDuration.value =
-    new Date().valueOf() / 1000 - Number(planeState.info?.start_time);
-
-  const wd = await getWorldData();
-  let currentPos: [number, number] = [planeState.s[0], planeState.s[2]];
-  let to = airportCoords(
-    wd.airports.find((a) => a.code === planeState.info?.flight.to)!,
-  );
+const totalDuration = computed(() => {
   let waypoints = planeState.info?.pos.planner.route.map((a) => a.pos)!;
-  waypoints.push(to);
-  waypoints.unshift(currentPos);
+  waypoints.unshift(fromCoords.value);
+  waypoints.push(toCoords.value);
 
   let distance = 0;
   for (let i = 0; i < waypoints.length - 1; i++) {
@@ -44,8 +46,28 @@ const durationUpdater = setInterval(async () => {
     distance += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(z1 - z2, 2));
   }
 
-  remainingDuration.value = distance / planeState.info?.model.motion.max_v[0]!;
-}, 1000);
+  return distance / planeState.info?.model.motion.max_v[0]!;
+});
+
+const currentDuration = ref(0);
+const remainingDuration = ref(0);
+async function updateDuration() {
+  currentDuration.value =
+    new Date().valueOf() / 1000 - Number(planeState.info?.start_time);
+
+  const wd = await getWorldData();
+  let [x1, , z1] = planeState.s;
+  let [x2, z2] = airportCoords(
+    wd.airports.find((a) => a.code === planeState.info?.flight.to)!,
+  );
+  let method1 =
+    Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(z1 - z2, 2)) / planeState.v[0];
+
+  let method2 = totalDuration.value - currentDuration.value;
+  remainingDuration.value = Math.max(method1, method2);
+}
+updateDuration();
+const durationUpdater = setInterval(updateDuration, 1000);
 
 let showWaypoints = ref(false);
 let waypointFeatureGroup: L.FeatureGroup | undefined;
