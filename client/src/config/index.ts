@@ -2,7 +2,7 @@
 import * as configImport from "./config.js";
 
 interface ClientConfig {
-  tileLayer: L.TileLayer;
+  tileLayer: L.TileLayer | L.FeatureGroup<L.TileLayer>;
   altitudeColours: [number, string][];
   socketUri?: string;
   world2map: (a: [number, number]) => [number, number];
