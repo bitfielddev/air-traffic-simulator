@@ -68,6 +68,7 @@ window.addEventListener("resize", toggleSidebarButtonDisplay);
 <style scoped>
 aside div {
   padding: 1em;
+  overflow-x: scroll;
 }
 
 #close {
