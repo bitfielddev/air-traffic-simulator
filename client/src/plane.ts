@@ -1,11 +1,11 @@
 import config from "@/config";
-import * as map from "@/map";
 import "Leaflet.MultiOptionsPolyline";
 import { stringify as uuidStringify } from "uuid";
 import { reactive, ref } from "vue";
 import type { Plane } from "./bindings/Plane";
 import socket from "./socket";
 import { escape } from "./util";
+import { rawMap } from "@/map";
 
 export interface SelectedPlane {
   id: string;
@@ -67,7 +67,7 @@ export async function selectPlane(id: string, e: L.PopupEvent) {
           options: config.altitudeColours.map((a) => ({ color: a[1] })),
         },
       },
-    ).addTo(map.map.value!),
+    ).addTo(rawMap()),
     id,
   };
 }
@@ -98,7 +98,7 @@ export function handleStateUpdates() {
             .on("popupopen", (e) => selectPlane(id, e))
             .on("popupclose", () => deselectPlane())
             .bindPopup("Loading...", { autoPan: false })
-            .addTo(map.map.value!),
+            .addTo(rawMap()),
         });
       } else {
         state.s = [sx, sy, sz];

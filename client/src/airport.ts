@@ -1,11 +1,11 @@
 import { reactive, ref } from "vue";
 import type { Airport } from "./bindings/Airport";
-import * as map from "./map";
 import socket from "./socket";
 import { escape } from "./util";
 import { getWorldData } from "./staticData";
 import config from "./config";
 import type { AirportData } from "@/bindings/AirportData.ts";
+import { rawMap } from "@/map.ts";
 
 export interface AirportState {
   info?: Airport;
@@ -64,7 +64,7 @@ export async function drawAirports() {
         )
         .on("popupopen", () => selectAirport(airport.code))
         .on("popupclose", () => deselectAirport())
-        .addTo(map.map.value!);
+        .addTo(rawMap());
     }
 
     const centre = airportCoords(airport);
@@ -75,7 +75,7 @@ export async function drawAirports() {
       .bindPopup(`${escape(airport.name)} (${airport.code})`)
       .on("popupopen", () => selectAirport(airport.code))
       .on("popupclose", () => deselectAirport())
-      .addTo(map.map.value!);
+      .addTo(rawMap());
     airportMarkers.set(airport.code, { marker });
   }
 }

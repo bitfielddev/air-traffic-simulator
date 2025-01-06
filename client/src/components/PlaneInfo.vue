@@ -1,38 +1,21 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch, watchEffect } from "vue";
+import { computed, onUnmounted, ref, watchEffect } from "vue";
 import "leaflet-easybutton/src/easy-button.css";
 import "leaflet-easybutton";
 import type { PlaneState } from "@/plane";
 import * as L from "leaflet";
 import { getWorldData } from "@/staticData";
-import * as map from "@/map";
 import AirportLink from "./AirportLink.vue";
 import config from "@/config";
 import { airportCoords } from "@/airport.ts";
+import { rawMap } from "@/map";
+import { formatDuration } from "../util.ts";
 
 const waypointList = computed(() => {
   const past = planeState.info?.pos.planner.past_route.map((a) => a.name);
   const future = planeState.info?.pos.planner.route.map((a) => a.name);
   return { past, future };
 });
-
-// https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
-function formatDuration(d: number): string {
-  let h: string | number = Math.floor(d / 3600);
-  let m: string | number = Math.floor((d % 3600) / 60);
-  let s: string | number = Math.floor(d % 60);
-
-  if (h < 10) {
-    h = "0" + h;
-  }
-  if (m < 10) {
-    m = "0" + m;
-  }
-  if (s < 10) {
-    s = "0" + s;
-  }
-  return h + ":" + m + ":" + s;
-}
 
 const { planeState } = defineProps<{ planeState: PlaneState }>();
 
@@ -62,7 +45,6 @@ const durationUpdater = setInterval(async () => {
   }
 
   remainingDuration.value = distance / planeState.info?.model.motion.max_v[0]!;
-  console.log(waypoints);
 }, 1000);
 
 let showWaypoints = ref(false);
@@ -75,8 +57,7 @@ watchEffect(async () => {
     const wd = await getWorldData();
     const pastWaypoints =
       waypointList.value.past
-        ?.map((name) => wd.waypoints.find((a) => a.name === name))
-        .filter((a) => a !== undefined)
+        ?.map((name) => wd.waypoints.find((a) => a.name === name)!)
         .map((a) =>
           L.circleMarker(config.world2map(a.pos), {
             radius: 5,
@@ -85,8 +66,7 @@ watchEffect(async () => {
         ) ?? [];
     const futureWaypoints =
       waypointList.value.future
-        ?.map((name) => wd.waypoints.find((a) => a.name === name))
-        .filter((a) => a !== undefined)
+        ?.map((name) => wd.waypoints.find((a) => a.name === name)!)
         .map((a) =>
           L.circleMarker(config.world2map(a.pos), {
             radius: 5,
@@ -97,7 +77,7 @@ watchEffect(async () => {
     waypointFeatureGroup = L.featureGroup([
       ...pastWaypoints,
       ...futureWaypoints,
-    ]).addTo(map.map.value!);
+    ]).addTo(rawMap());
   }
 });
 

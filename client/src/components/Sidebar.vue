@@ -11,6 +11,7 @@ import "leaflet-easybutton/src/easy-button.css";
 import { computed, ref, watch } from "vue";
 import AirportInfo from "./AirportInfo.vue";
 import PlaneInfo from "./PlaneInfo.vue";
+import { rawMap } from "@/map";
 
 const planeState = computed(() =>
   plane.selectedPlane.value === undefined
@@ -34,7 +35,7 @@ watch(map.map, () => {
   if (map.map.value === undefined || sidebarButton.value !== undefined) return;
   sidebarButton.value = L.easyButton("fa-bars", () => {
     showInMobile.value = true;
-  }).addTo(map.map.value!);
+  }).addTo(rawMap());
   toggleSidebarButtonDisplay();
 });
 
