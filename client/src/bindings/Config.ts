@@ -4,4 +4,5 @@ export interface Config {
   tick_duration: number;
   plane_spawn_chance: number;
   max_planes: number | null;
+  cruising_altitude: number;
 }

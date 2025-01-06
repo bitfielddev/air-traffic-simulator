@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, sync::Arc};
+use std::{collections::VecDeque, sync::Arc, time::SystemTime};
 
 use dubins_paths::DubinsPath;
 use glam::Vec3Swizzles;
@@ -33,6 +33,7 @@ pub struct Plane {
     pub phase: PhaseData,
     #[ts(as = "Vec<PlaneEvent>")]
     pub events: VecDeque<PlaneEvent>,
+    pub start_time: u64,
 }
 
 impl Plane {
@@ -47,10 +48,7 @@ impl Plane {
             runway.start3(),
             Angle((runway.end - runway.start).to_angle()),
         );
-        let pos_ang_end = Pos2Angle(
-            runway.end,
-            Angle((runway.end - runway.start).to_angle()),
-        );
+        let pos_ang_end = Pos2Angle(runway.end, Angle((runway.end - runway.start).to_angle()));
         let mut s = Self {
             id: Uuid::new_v4(),
             pos: PlanePos {
@@ -70,6 +68,10 @@ impl Plane {
             phase: PhaseData::Takeoff {
                 runway: Arc::clone(runway),
             },
+            start_time: SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
         };
         s.pos.kinematics.target_x(
             Some(s.model.motion.max_v.x),

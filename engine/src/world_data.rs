@@ -195,11 +195,7 @@ impl WorldData {
         let Some((from_waypoint, _)) = self
             .waypoints
             .iter()
-            .map(|a| {
-                (
-                    a,
-                    a.pos.distance(from.0))
-            })
+            .map(|a| (a, a.pos.distance(from.0)))
             .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
             .next()
         else {
@@ -208,12 +204,7 @@ impl WorldData {
         let Some((to_waypoint, _)) = self
             .waypoints
             .iter()
-            .map(|a| {
-                (
-                    a,
-                    a.pos.distance(to)
-                )
-            })
+            .map(|a| (a, a.pos.distance(to)))
             .sorted_by(|(_, a), (_, b)| a.total_cmp(b))
             .next()
         else {

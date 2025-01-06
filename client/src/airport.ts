@@ -5,6 +5,7 @@ import socket from "./socket";
 import { escape } from "./util";
 import { getWorldData } from "./staticData";
 import config from "./config";
+import type { AirportData } from "@/bindings/AirportData.ts";
 
 export interface AirportState {
   info?: Airport;
@@ -13,6 +14,18 @@ export interface AirportState {
 
 export const airportMarkers = reactive(new Map<string, AirportState>());
 export const selectedAirport = ref<string>();
+
+export function airportCoords(airport: AirportData): [number, number] {
+  return airport.runways
+    .flatMap((a) => [a.start, a.end])
+    .reduce(
+      ([px, py], [x, y]) => [
+        px + x / (2 * airport.runways.length),
+        py + y / (2 * airport.runways.length),
+      ],
+      [0, 0],
+    );
+}
 
 export function deselectAirport() {
   selectedAirport.value = undefined;
@@ -54,15 +67,7 @@ export async function drawAirports() {
         .addTo(map.map.value!);
     }
 
-    const centre = airport.runways
-      .flatMap((a) => [a.start, a.end])
-      .reduce(
-        ([px, py], [x, y]) => [
-          px + x / (2 * airport.runways.length),
-          py + y / (2 * airport.runways.length),
-        ],
-        [0, 0],
-      );
+    const centre = airportCoords(airport);
     const marker = L.circleMarker(config.world2map(centre), {
       radius: 10,
       color: "red",

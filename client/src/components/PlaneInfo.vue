@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watchEffect } from "vue";
+import { computed, onUnmounted, ref, watch, watchEffect } from "vue";
 import "leaflet-easybutton/src/easy-button.css";
 import "leaflet-easybutton";
 import type { PlaneState } from "@/plane";
@@ -8,14 +8,62 @@ import { getWorldData } from "@/staticData";
 import * as map from "@/map";
 import AirportLink from "./AirportLink.vue";
 import config from "@/config";
-
-const { planeState } = defineProps<{ planeState: PlaneState }>();
+import { airportCoords } from "@/airport.ts";
 
 const waypointList = computed(() => {
   const past = planeState.info?.pos.planner.past_route.map((a) => a.name);
   const future = planeState.info?.pos.planner.route.map((a) => a.name);
   return { past, future };
 });
+
+// https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
+function formatDuration(d: number): string {
+  let h: string | number = Math.floor(d / 3600);
+  let m: string | number = Math.floor((d % 3600) / 60);
+  let s: string | number = Math.floor(d % 60);
+
+  if (h < 10) {
+    h = "0" + h;
+  }
+  if (m < 10) {
+    m = "0" + m;
+  }
+  if (s < 10) {
+    s = "0" + s;
+  }
+  return h + ":" + m + ":" + s;
+}
+
+const { planeState } = defineProps<{ planeState: PlaneState }>();
+
+const startTime = computed(
+  () => new Date(Number(planeState.info?.start_time) * 1000),
+);
+const currentDuration = ref(0);
+const remainingDuration = ref(0);
+const durationUpdater = setInterval(async () => {
+  currentDuration.value =
+    new Date().valueOf() / 1000 - Number(planeState.info?.start_time);
+
+  const wd = await getWorldData();
+  let currentPos: [number, number] = [planeState.s[0], planeState.s[2]];
+  let to = airportCoords(
+    wd.airports.find((a) => a.code === planeState.info?.flight.to)!,
+  );
+  let waypoints = planeState.info?.pos.planner.route.map((a) => a.pos)!;
+  waypoints.push(to);
+  waypoints.unshift(currentPos);
+
+  let distance = 0;
+  for (let i = 0; i < waypoints.length - 1; i++) {
+    let [x1, z1] = waypoints[i];
+    let [x2, z2] = waypoints[i + 1];
+    distance += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(z1 - z2, 2));
+  }
+
+  remainingDuration.value = distance / planeState.info?.model.motion.max_v[0]!;
+  console.log(waypoints);
+}, 1000);
 
 let showWaypoints = ref(false);
 let waypointFeatureGroup: L.FeatureGroup | undefined;
@@ -55,6 +103,7 @@ watchEffect(async () => {
 
 onUnmounted(() => {
   waypointFeatureGroup?.remove();
+  clearInterval(durationUpdater);
 });
 </script>
 <template>
@@ -68,13 +117,16 @@ onUnmounted(() => {
     ><br />
     on a(n) <b>{{ planeState.info?.model.name }}</b
     ><br />
-    <!--<b>{departTime}</b> --(<i>{duration}</i>)→ <b>{arrivalTime}</b><br />
-{distance} blocks-->
     <b>Coords:</b> {{ Math.round(planeState.s[0]) }}
     {{ Math.round(planeState.s[1]) }} <b>Alt:</b>
     {{ Math.round(planeState.s[2]) }} <br />
     <b>Velocity:</b> {{ Math.round(planeState.v[0]) }}
-    {{ Math.round(planeState.v[1]) }} <br /><br />
+    {{ Math.round(planeState.v[1]) }} <br />
+    <b>Departed:</b> {{ startTime.toLocaleTimeString() }} ({{
+      formatDuration(currentDuration)
+    }}
+    ago) <br />
+    <b>Est. Remaining:</b> {{ formatDuration(remainingDuration) }} <br /><br />
   </div>
   <small>
     <span

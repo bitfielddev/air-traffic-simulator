@@ -12,4 +12,5 @@ export interface Plane {
   flight: Flight;
   phase: PhaseData;
   events: PlaneEvent[];
+  start_time: bigint;
 }

@@ -19,6 +19,10 @@ interface ClientToServerEvents {
   airport_arrivals: (code: string, cb: (a: string[]) => void) => void;
 }
 
-export default ref(io(config.socketUri ?? window.location.href)) as Ref<
-  Socket<ServerToClientEvents, ClientToServerEvents>
->;
+export default ref(
+  io(
+    import.meta.env.DEV
+      ? "0.0.0.0:3000"
+      : (config.socketUri ?? window.location.href),
+  ),
+) as Ref<Socket<ServerToClientEvents, ClientToServerEvents>>;
