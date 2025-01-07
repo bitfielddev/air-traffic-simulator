@@ -26,32 +26,32 @@ watch(
     waypointFeatureGroup?.remove();
     if (!showWaypoints.value) {
       waypointFeatureGroup = undefined;
-    } else {
-      const wd = await getWorldData();
-      const pastWaypointMarkers =
-        pastWaypoints.value
-          .map((name) => wd.waypoints.find((a) => a.name === name)!)
-          .map((a) =>
-            L.circleMarker(config.world2map(a.pos), {
-              radius: 5,
-              color: "#ff0000",
-            }).bindTooltip(a.name, { permanent: true, interactive: false }),
-          ) ?? [];
-      const futureWaypointMarkers =
-        futureWaypoints.value
-          .map((name) => wd.waypoints.find((a) => a.name === name)!)
-          .map((a) =>
-            L.circleMarker(config.world2map(a.pos), {
-              radius: 5,
-              color: "#00ff00",
-            }).bindTooltip(a.name, { permanent: true, interactive: false }),
-          ) ?? [];
-
-      waypointFeatureGroup = L.featureGroup([
-        ...pastWaypointMarkers,
-        ...futureWaypointMarkers,
-      ]).addTo(rawMap());
+      return;
     }
+    const wd = await getWorldData();
+    const pastWaypointMarkers =
+      pastWaypoints.value
+        .map((name) => wd.waypoints.find((a) => a.name === name)!)
+        .map((a) =>
+          L.circleMarker(config.world2map(a.pos), {
+            radius: 5,
+            color: "#ff0000",
+          }).bindTooltip(a.name, { permanent: true, interactive: false }),
+        ) ?? [];
+    const futureWaypointMarkers =
+      futureWaypoints.value
+        .map((name) => wd.waypoints.find((a) => a.name === name)!)
+        .map((a) =>
+          L.circleMarker(config.world2map(a.pos), {
+            radius: 5,
+            color: "#00ff00",
+          }).bindTooltip(a.name, { permanent: true, interactive: false }),
+        ) ?? [];
+
+    waypointFeatureGroup = L.featureGroup([
+      ...pastWaypointMarkers,
+      ...futureWaypointMarkers,
+    ]).addTo(rawMap());
   },
   { deep: true },
 );

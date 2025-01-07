@@ -21,7 +21,7 @@ onUnmounted(() => {
 <template>
   <template v-if="planeState.info !== undefined">
     <div style="text-align: center">
-      <b style="font-size: 3em"
+      <b style="font-size: 2.5em"
         ><AirportLink :airport-id="planeState.info.flight.from" /> →
         <AirportLink :airport-id="planeState.info.flight.to" /></b
       ><br />
