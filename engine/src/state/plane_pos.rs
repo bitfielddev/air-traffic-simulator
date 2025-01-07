@@ -59,7 +59,7 @@ impl PlanePos {
 
         let xz = self.planner.tick(
             ds.x,
-            self.pos_ang.to_2(),
+            self.pos_ang,
             model_motion,
             &mut self.kinematics,
             config,
@@ -82,7 +82,7 @@ impl FlightPlanner {
     pub fn tick(
         &mut self,
         dsx: f32,
-        pos_ang: Pos2Angle,
+        pos_ang: Pos3Angle,
         model_motion: ModelMotion,
         kinematics: &mut Kinematics,
         config: &Config,
@@ -91,9 +91,9 @@ impl FlightPlanner {
             if let Some(waypoint) = self.route.pop_front() {
                 debug!(?waypoint.name, "Planning new instructions");
                 let waypoint_pos_ang =
-                    Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0).to_angle()));
+                    Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0.to_2()).to_angle()));
                 let mut path = DubinsPath::shortest_from(
-                    pos_ang.into(),
+                    pos_ang.to_2().into(),
                     waypoint_pos_ang.into(),
                     model_motion.turning_radius,
                 )
@@ -103,7 +103,7 @@ impl FlightPlanner {
                 if !self.past_route.is_empty() {
                     kinematics.target_y(
                         Some(0.0),
-                        Some(config.cruising_altitude(pos_ang.0.xy(), waypoint.pos) - pos_ang.0.y),
+                        Some(config.cruising_altitude(pos_ang.0.xy(), waypoint.pos) - pos_ang.0.z),
                         None,
                         None,
                         model_motion,
@@ -114,7 +114,7 @@ impl FlightPlanner {
                 self.past_route.push(waypoint);
             } else {
                 trace!("Lost");
-                return Pos2Angle(pos_ang.0 + pos_ang.1.vec() * dsx, pos_ang.1);
+                return Pos2Angle(pos_ang.0.to_2() + pos_ang.1.vec() * dsx, pos_ang.1);
             }
         }
         let instruction = self.instructions.front().unwrap();
