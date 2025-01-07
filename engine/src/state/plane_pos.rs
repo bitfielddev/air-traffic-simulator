@@ -2,6 +2,7 @@ use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::DubinsPath;
 use glam::{Vec2, Vec2Swizzles, Vec3Swizzles};
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use ts_rs::TS;
@@ -88,8 +89,18 @@ impl FlightPlanner {
         if self.instructions.is_empty() {
             if let Some(waypoint) = self.route.pop_front() {
                 debug!(?waypoint.name, "Planning new instructions");
-                let waypoint_pos_ang =
-                    Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0).to_angle()));
+                let randomness = Vec2::new(
+                    thread_rng().gen_range(
+                        -2.0 * model_motion.turning_radius..2.0 * model_motion.turning_radius,
+                    ),
+                    thread_rng().gen_range(
+                        -2.0 * model_motion.turning_radius..2.0 * model_motion.turning_radius,
+                    ),
+                );
+                let waypoint_pos_ang = Pos2Angle(
+                    waypoint.pos + randomness,
+                    Angle((waypoint.pos - pos_ang.0).to_angle()),
+                );
                 let mut path = DubinsPath::shortest_from(
                     pos_ang.into(),
                     waypoint_pos_ang.into(),
