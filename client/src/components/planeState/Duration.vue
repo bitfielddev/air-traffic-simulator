@@ -29,9 +29,9 @@ const totalDuration = computed(() => {
 
   let distance = 0;
   for (let i = 0; i < waypoints.length - 1; i++) {
-    let [x1, z1] = waypoints[i];
-    let [x2, z2] = waypoints[i + 1];
-    distance += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(z1 - z2, 2));
+    let [x1, y1] = waypoints[i];
+    let [x2, y2] = waypoints[i + 1];
+    distance += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
   }
 
   return distance / planeState.info!.model.motion.max_v[0];
@@ -43,13 +43,15 @@ async function updateDuration() {
   currentDuration.value =
     new Date().valueOf() / 1000 - Number(planeState.info!.start_time);
 
-  let [x1, , z1] = planeState.s;
-  let [x2, z2] = toCoords.value;
-  let method1 =
-    Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(z1 - z2, 2)) / planeState.v[0];
-
-  let method2 = totalDuration.value - currentDuration.value;
-  remainingDuration.value = Math.max(method1, method2);
+  if (planeState.info!.pos.planner.route.length == 0) {
+    let [x1, y1] = planeState.s;
+    let [x2, y2] = toCoords.value;
+    remainingDuration.value =
+      Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2)) /
+      planeState.info!.model.motion.max_v[0];
+  } else {
+    remainingDuration.value = totalDuration.value - currentDuration.value;
+  }
 }
 updateDuration();
 const durationUpdater = setInterval(updateDuration, 1000);

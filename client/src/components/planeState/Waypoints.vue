@@ -3,7 +3,7 @@ import { ref } from "vue";
 let showWaypoints = ref(false);
 </script>
 <script setup lang="ts">
-import { computed, onUnmounted, watch, watchEffect } from "vue";
+import { computed, onUnmounted, watch } from "vue";
 import * as L from "leaflet";
 import { getWorldData } from "@/staticData.ts";
 import config from "@/config";
@@ -21,7 +21,7 @@ const futureWaypoints = computed(() =>
 
 let waypointFeatureGroup: L.FeatureGroup | undefined;
 watch(
-  [showWaypoints, pastWaypoints, futureWaypoints],
+  [showWaypoints, pastWaypoints, futureWaypoints, planeState],
   async () => {
     waypointFeatureGroup?.remove();
     if (!showWaypoints.value) {
