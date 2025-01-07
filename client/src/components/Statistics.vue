@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { getWorldData } from "@/staticData.ts";
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { planeStates } from "@/plane.ts";
 
-let num_airports = 0;
-let num_runways = 0;
+let num_airports = ref(0);
+let num_runways = ref(0);
 onMounted(async () => {
   const wd = await getWorldData();
-  num_airports = wd.airports.filter((a) => a.runways.length).length;
-  num_runways = wd.airports
+  num_airports.value = wd.airports.filter((a) => a.runways.length).length;
+  num_runways.value = wd.airports
     .map((a) => a.runways.length)
     .reduce((a, b) => a + b);
 });
