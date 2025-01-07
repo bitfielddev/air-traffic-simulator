@@ -22,7 +22,7 @@ interface ClientToServerEvents {
 export default ref(
   io(
     import.meta.env.DEV
-      ? "0.0.0.0:3000"
+      ? "http://52.77.24.9:747/"
       : (config.socketUri ?? window.location.href),
   ),
 ) as Ref<Socket<ServerToClientEvents, ClientToServerEvents>>;

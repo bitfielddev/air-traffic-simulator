@@ -4,9 +4,19 @@ import "leaflet-easybutton";
 import AirportLink from "./AirportLink.vue";
 import Waypoints from "@/components/planeState/Waypoints.vue";
 import Duration from "@/components/planeState/Duration.vue";
-import type { PlaneState } from "@/plane.ts";
+import { getPlaneInfo, type PlaneState } from "@/plane.ts";
+import { onUnmounted } from "vue";
 
 const { planeState } = defineProps<{ planeState: PlaneState }>();
+
+const planeInfoUpdater = setInterval(() => {
+  if (planeState.info === undefined) return;
+  getPlaneInfo(planeState.info.id, true);
+}, 5000);
+
+onUnmounted(() => {
+  clearInterval(planeInfoUpdater);
+});
 </script>
 <template>
   <template v-if="planeState.info !== undefined">
