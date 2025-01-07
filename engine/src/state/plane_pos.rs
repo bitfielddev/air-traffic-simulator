@@ -1,7 +1,7 @@
 use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::DubinsPath;
-use glam::{Vec2, Vec2Swizzles, Vec3Swizzles};
+use glam::Vec2;
 use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};

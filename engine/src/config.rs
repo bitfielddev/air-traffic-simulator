@@ -29,6 +29,7 @@ impl Default for Config {
 }
 
 impl Config {
+    #[must_use]
     pub fn cruising_altitude(&self, from: Vec2, to: Vec2) -> f32 {
         if from == to {
             return self.min_cruising_altitude();
@@ -41,15 +42,14 @@ impl Config {
             } else {
                 self.cruising_altitude_minus
             }
+        } else if ew == Ordering::Less || (ew == Ordering::Equal && ns == Ordering::Less) {
+            self.cruising_altitude_plus
         } else {
-            if ew == Ordering::Less || (ew == Ordering::Equal && ns == Ordering::Less) {
-                self.cruising_altitude_plus
-            } else {
-                self.cruising_altitude_minus
-            }
+            self.cruising_altitude_minus
         }
     }
-    pub fn min_cruising_altitude(&self) -> f32 {
+    #[must_use]
+    pub const fn min_cruising_altitude(&self) -> f32 {
         self.cruising_altitude_plus
             .min(self.cruising_altitude_minus)
     }

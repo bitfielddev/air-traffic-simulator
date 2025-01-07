@@ -2,7 +2,7 @@
 import type { Plane } from "@/bindings/Plane";
 import * as plane from "@/plane";
 import socket from "@/socket";
-import { computed, ref, watch, watchEffect } from "vue";
+import { computed, ref, watch } from "vue";
 import PlaneLink from "./PlaneLink.vue";
 import AirportLink from "./AirportLink.vue";
 import type { AirportState } from "@/airport";
