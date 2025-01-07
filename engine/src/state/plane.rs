@@ -102,9 +102,20 @@ impl Plane {
                 let runway_progress =
                     plane_pos.distance(runway.start) / runway.end.distance(runway.start);
                 (runway_progress >= 0.75).then(|| {
+                    let cruising_altitude = self
+                        .pos
+                        .planner
+                        .past_route
+                        .last()
+                        .or_else(|| self.pos.planner.route.front())
+                        .map(|a| a.pos)
+                        .map_or_else(
+                            || config.min_cruising_altitude(),
+                            |a| config.cruising_altitude(plane_pos, a),
+                        );
                     self.pos.kinematics.target_y(
                         Some(0.0),
-                        Some(config.cruising_altitude - self.pos.pos_ang.0.z),
+                        Some(cruising_altitude - self.pos.pos_ang.0.z),
                         None,
                         None,
                         self.model.motion,
@@ -202,7 +213,8 @@ impl Plane {
             info!(phase=?new_phase.str(), "Changing phase");
             self.phase = new_phase;
         }
-        self.pos.tick(config.tick_duration, self.model.motion);
+        self.pos
+            .tick(config.tick_duration, self.model.motion, config);
         (remove, send)
     }
 }

@@ -1,12 +1,13 @@
 use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::DubinsPath;
-use glam::Vec2;
+use glam::{Vec2, Vec2Swizzles};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use ts_rs::TS;
 
 use crate::{
+    config::Config,
     util::{
         angle::Angle,
         direction::{PerpRot, Rotation},
@@ -53,10 +54,16 @@ pub enum FlightInstruction {
 }
 
 impl PlanePos {
-    pub fn tick(&mut self, dt: f32, model_motion: ModelMotion) {
+    pub fn tick(&mut self, dt: f32, model_motion: ModelMotion, config: &Config) {
         let ds = self.kinematics.tick(dt, model_motion);
 
-        let xz = self.planner.tick(ds.x, self.pos_ang.to_2(), model_motion);
+        let xz = self.planner.tick(
+            ds.x,
+            self.pos_ang.to_2(),
+            model_motion,
+            &mut self.kinematics,
+            config,
+        );
         self.planner.past_pos.push(self.pos_ang.0);
         self.pos_ang = Pos3Angle(xz.0.extend(self.pos_ang.0.z + ds.y), xz.1);
     }
@@ -72,7 +79,14 @@ impl FlightPlanner {
         }
     }
     #[tracing::instrument(skip(model_motion))]
-    pub fn tick(&mut self, dsx: f32, pos_ang: Pos2Angle, model_motion: ModelMotion) -> Pos2Angle {
+    pub fn tick(
+        &mut self,
+        dsx: f32,
+        pos_ang: Pos2Angle,
+        model_motion: ModelMotion,
+        kinematics: &mut Kinematics,
+        config: &Config,
+    ) -> Pos2Angle {
         if self.instructions.is_empty() {
             if let Some(waypoint) = self.route.pop_front() {
                 debug!(?waypoint.name, "Planning new instructions");
@@ -85,6 +99,16 @@ impl FlightPlanner {
                 )
                 .unwrap();
                 path.param[2] = 0.0;
+
+                if !self.past_route.is_empty() {
+                    kinematics.target_y(
+                        Some(0.0),
+                        Some(config.cruising_altitude(pos_ang.0.xy(), waypoint.pos) - pos_ang.0.y),
+                        None,
+                        None,
+                        model_motion,
+                    );
+                }
 
                 self.instructions.push_back(FlightInstruction::Dubins(path));
                 self.past_route.push(waypoint);
@@ -104,7 +128,7 @@ impl FlightPlanner {
             self.instruction_s = 0.0;
             self.past_instructions
                 .push(self.instructions.pop_front().unwrap());
-            self.tick(dsx2, pos_ang2, model_motion)
+            self.tick(dsx2, pos_ang2, model_motion, kinematics, config)
         }
     }
 }
@@ -192,7 +216,7 @@ mod tests {
         };
 
         for _ in 0..25 {
-            plane_pos.tick(1.0, model_motion);
+            plane_pos.tick(1.0, model_motion, &Config::default());
             // eprintln!("{:?}", plane_pos.pos_ang);
             if plane_pos.planner.instructions.is_empty() {
                 assert_lt!(
@@ -231,7 +255,7 @@ mod tests {
         };
 
         for _ in 0..25 {
-            plane_pos.tick(1.0, model_motion);
+            plane_pos.tick(1.0, model_motion, &Config::default());
             // eprintln!("{:?}", plane_pos.pos_ang);
             if plane_pos.planner.instructions.is_empty() {
                 assert_lt!(
