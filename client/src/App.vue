@@ -16,12 +16,13 @@ import Sidebar from "./components/Sidebar.vue";
 }
 
 #aside {
-  width: 20vw;
+  width: 300px;
+  max-width: 300px;
   background-color: lightgray;
 }
 
 #map {
-  width: 80vw;
+  width: calc(100vw - 300px);
 }
 
 @media only screen and (max-width: 600px) {
