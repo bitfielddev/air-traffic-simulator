@@ -12,6 +12,7 @@ import { computed, ref, watch } from "vue";
 import AirportInfo from "./AirportInfo.vue";
 import PlaneInfo from "./PlaneInfo.vue";
 import { rawMap } from "@/map";
+import Statistics from "@/components/Statistics.vue";
 
 const planeState = computed(() =>
   plane.selectedPlane.value === undefined
@@ -61,7 +62,11 @@ window.addEventListener("resize", toggleSidebarButtonDisplay);
     <div v-else-if="airportState !== undefined">
       <AirportInfo :airport-state />
     </div>
-    <div v-else>Select an airport, runway or flight...</div>
+    <div v-else>
+      Select an airport, runway or flight...
+      <hr />
+      <Statistics />
+    </div>
   </aside>
 </template>
 
