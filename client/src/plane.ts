@@ -9,7 +9,7 @@ import { rawMap } from "@/map";
 
 export interface SelectedPlane {
   id: string;
-  path: L.MultiOptionsPolyline;
+  path?: L.MultiOptionsPolyline;
 }
 
 export interface PlaneState {
@@ -24,12 +24,12 @@ export const planeMarkers = reactive(new Map<string, PlaneState>());
 export const selectedPlane = ref<SelectedPlane>();
 
 export function updateSelectPlane(latLng: L.LatLng) {
-  selectedPlane.value?.path.setLatLngs(
-    selectedPlane.value?.path.getLatLngs().concat([latLng]),
+  selectedPlane.value?.path?.setLatLngs(
+    selectedPlane.value?.path?.getLatLngs().concat([latLng]),
   );
 }
 export function deselectPlane() {
-  selectedPlane.value?.path.remove();
+  selectedPlane.value?.path?.remove();
   selectedPlane.value = undefined;
 }
 
@@ -44,32 +44,31 @@ export async function getPlaneInfo(id: string, force?: boolean) {
 
 export async function selectPlane(id: string, e: L.PopupEvent) {
   deselectPlane();
+  selectedPlane.value = { id };
+
   const plane = await getPlaneInfo(id, true);
+
   e.popup.setContent(
     `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
   );
+  selectedPlane.value.path = L.multiOptionsPolyline(
+    plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
+    {
+      multiOptions: {
+        optionIdxFn: (latLng) => {
+          const altThresholds = config.altitudeColours.map((a) => a[0]);
 
-  selectedPlane.value = {
-    path: L.multiOptionsPolyline(
-      plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
-      {
-        multiOptions: {
-          optionIdxFn: (latLng) => {
-            const altThresholds = config.altitudeColours.map((a) => a[0]);
-
-            for (let i = 0; i < altThresholds.length; ++i) {
-              if (latLng.alt <= altThresholds[i]) {
-                return i;
-              }
+          for (let i = 0; i < altThresholds.length; ++i) {
+            if (latLng.alt <= altThresholds[i]) {
+              return i;
             }
-            return altThresholds.length;
-          },
-          options: config.altitudeColours.map((a) => ({ color: a[1] })),
+          }
+          return altThresholds.length;
         },
+        options: config.altitudeColours.map((a) => ({ color: a[1] })),
       },
-    ).addTo(rawMap()),
-    id,
-  };
+    },
+  ).addTo(rawMap());
 }
 
 export function handleStateUpdates() {
