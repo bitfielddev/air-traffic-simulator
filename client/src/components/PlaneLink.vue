@@ -5,7 +5,7 @@ defineProps<{ planeId: string }>();
 </script>
 
 <template>
-  <button @click="plane.planeMarkers.get(planeId)?.marker.fireEvent('click')">
+  <button @click="plane.planeStates.get(planeId)?.marker.fireEvent('click')">
     <slot />
   </button>
 </template>

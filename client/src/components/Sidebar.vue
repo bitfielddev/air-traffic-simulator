@@ -16,14 +16,14 @@ import { rawMap } from "@/map";
 const planeState = computed(() =>
   plane.selectedPlane.value === undefined
     ? undefined
-    : (plane.planeMarkers.get(plane.selectedPlane.value.id) as
+    : (plane.planeStates.get(plane.selectedPlane.value.id) as
         | plane.PlaneState
         | undefined),
 );
 const airportState = computed(() =>
   airport.selectedAirport.value === undefined
     ? undefined
-    : (airport.airportMarkers.get(airport.selectedAirport.value) as
+    : (airport.airportStates.get(airport.selectedAirport.value) as
         | airport.AirportState
         | undefined),
 );

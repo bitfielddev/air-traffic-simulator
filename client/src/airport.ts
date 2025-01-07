@@ -1,4 +1,4 @@
-import { reactive, ref } from "vue";
+import { markRaw, reactive, ref } from "vue";
 import type { Airport } from "./bindings/Airport";
 import socket from "./socket";
 import { escape } from "./util";
@@ -12,7 +12,7 @@ export interface AirportState {
   marker: L.CircleMarker;
 }
 
-export const airportMarkers = reactive(new Map<string, AirportState>());
+export const airportStates = reactive(new Map<string, AirportState>());
 export const selectedAirport = ref<string>();
 
 export function airportCoords(airport: AirportData): [number, number] {
@@ -37,12 +37,12 @@ export async function selectAirport(id: string) {
 }
 
 export async function getAirportInfo(id: string, force?: boolean) {
-  const cache = airportMarkers.get(id)?.info;
+  const cache = airportStates.get(id)?.info;
   if (cache !== undefined && !force) return cache as Airport;
   const info: Airport = await socket.value
     .timeout(5000)
     .emitWithAck("airport", id);
-  const state = airportMarkers.get(id)!;
+  const state = airportStates.get(id)!;
   if (state !== undefined) state.info = info;
   return info;
 }
@@ -67,15 +67,16 @@ export async function drawAirports() {
         .addTo(rawMap());
     }
 
-    const centre = airportCoords(airport);
-    const marker = L.circleMarker(config.world2map(centre), {
-      radius: 10,
-      color: "red",
-    })
-      .bindPopup(`${escape(airport.name)} (${airport.code})`)
-      .on("popupopen", () => selectAirport(airport.code))
-      .on("popupclose", () => deselectAirport())
-      .addTo(rawMap());
-    airportMarkers.set(airport.code, { marker });
+    const marker = markRaw(
+      L.circleMarker(config.world2map(airportCoords(airport)), {
+        radius: 10,
+        color: "red",
+      })
+        .bindPopup(`${escape(airport.name)} (${airport.code})`)
+        .on("popupopen", () => selectAirport(airport.code))
+        .on("popupclose", () => deselectAirport())
+        .addTo(rawMap()),
+    );
+    airportStates.set(airport.code, { marker });
   }
 }

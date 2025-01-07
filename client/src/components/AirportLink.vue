@@ -6,7 +6,7 @@ defineProps<{ airportId: string }>();
 
 <template>
   <button
-    @click="airport.airportMarkers.get(airportId)?.marker.fireEvent('click')"
+    @click="airport.airportStates.get(airportId)?.marker.fireEvent('click')"
   >
     <slot
       ><span>{{ airportId }}</span></slot

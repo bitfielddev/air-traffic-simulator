@@ -1,7 +1,7 @@
 import config from "@/config";
 import "Leaflet.MultiOptionsPolyline";
 import { stringify as uuidStringify } from "uuid";
-import { reactive, ref } from "vue";
+import { markRaw, reactive, ref } from "vue";
 import type { Plane } from "./bindings/Plane";
 import socket from "./socket";
 import { escape } from "./util";
@@ -20,7 +20,7 @@ export interface PlaneState {
   info?: Plane;
 }
 
-export const planeMarkers = reactive(new Map<string, PlaneState>());
+export const planeStates = reactive(new Map<string, PlaneState>());
 export const selectedPlane = ref<SelectedPlane>();
 
 export function updateSelectPlane(latLng: L.LatLng) {
@@ -34,10 +34,10 @@ export function deselectPlane() {
 }
 
 export async function getPlaneInfo(id: string, force?: boolean) {
-  const cache = planeMarkers.get(id)?.info;
+  const cache = planeStates.get(id)?.info;
   if (cache !== undefined && !force) return cache as Plane;
   const info: Plane = await socket.value.timeout(5000).emitWithAck("plane", id);
-  const state = planeMarkers.get(id)!;
+  const state = planeStates.get(id)!;
   if (state !== undefined) state.info = info;
   return info;
 }
@@ -51,31 +51,33 @@ export async function selectPlane(id: string, e: L.PopupEvent) {
   e.popup.setContent(
     `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
   );
-  selectedPlane.value.path = L.multiOptionsPolyline(
-    plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
-    {
-      multiOptions: {
-        optionIdxFn: (latLng) => {
-          const altThresholds = config.altitudeColours.map((a) => a[0]);
+  selectedPlane.value.path = markRaw(
+    L.multiOptionsPolyline(
+      plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
+      {
+        multiOptions: {
+          optionIdxFn: (latLng) => {
+            const altThresholds = config.altitudeColours.map((a) => a[0]);
 
-          for (let i = 0; i < altThresholds.length; ++i) {
-            if (latLng.alt <= altThresholds[i]) {
-              return i;
+            for (let i = 0; i < altThresholds.length; ++i) {
+              if (latLng.alt <= altThresholds[i]) {
+                return i;
+              }
             }
-          }
-          return altThresholds.length;
+            return altThresholds.length;
+          },
+          options: config.altitudeColours.map((a) => ({ color: a[1] })),
         },
-        options: config.altitudeColours.map((a) => ({ color: a[1] })),
       },
-    },
-  ).addTo(rawMap());
+    ).addTo(rawMap()),
+  );
 }
 
 export function handleStateUpdates() {
   socket.value.on("state", (removed, bin) => {
     for (const remove of removed) {
-      planeMarkers.get(remove)?.marker.remove();
-      planeMarkers.delete(remove);
+      planeStates.get(remove)?.marker.remove();
+      planeStates.delete(remove);
     }
     for (let off = 0; off < bin.byteLength; off += 40) {
       const id = uuidStringify(new Uint8Array(bin.slice(off, off + 16)));
@@ -87,17 +89,19 @@ export function handleStateUpdates() {
       const vx = view.getFloat32(off + 32, true);
       const vy = view.getFloat32(off + 36, true);
 
-      const state = planeMarkers.get(id);
+      const state = planeStates.get(id);
       if (state === undefined) {
-        planeMarkers.set(id, {
+        planeStates.set(id, {
           s: [sx, sy, sz],
           angle,
           v: [vx, vy],
-          marker: L.circleMarker(config.world2map([sx, sy]), { radius: 5 })
-            .on("popupopen", (e) => selectPlane(id, e))
-            .on("popupclose", () => deselectPlane())
-            .bindPopup("Loading...", { autoPan: false })
-            .addTo(rawMap()),
+          marker: markRaw(
+            L.circleMarker(config.world2map([sx, sy]), { radius: 5 })
+              .on("popupopen", (e) => selectPlane(id, e))
+              .on("popupclose", () => deselectPlane())
+              .bindPopup("Loading...", { autoPan: false })
+              .addTo(rawMap()),
+          ),
         });
       } else {
         state.s = [sx, sy, sz];
@@ -115,7 +119,7 @@ export function handleStateUpdates() {
 
 export function updatePositions(dt: number) {
   const start = Date.now();
-  for (const state of planeMarkers.values()) {
+  for (const state of planeStates.values()) {
     state.s[0] += state.v[0] * Math.cos(state.angle) * (dt / 1000);
     state.s[1] += state.v[0] * Math.sin(state.angle) * (dt / 1000);
     state.marker.setLatLng(config.world2map3(state.s));
