@@ -78,12 +78,14 @@ impl FlightPlanner {
                 debug!(?waypoint.name, "Planning new instructions");
                 let waypoint_pos_ang =
                     Pos2Angle(waypoint.pos, Angle((waypoint.pos - pos_ang.0).to_angle()));
-                let path = DubinsPath::shortest_from(
+                let mut path = DubinsPath::shortest_from(
                     pos_ang.into(),
                     waypoint_pos_ang.into(),
                     model_motion.turning_radius,
                 )
                 .unwrap();
+                path.param[2] = 0.0;
+
                 self.instructions.push_back(FlightInstruction::Dubins(path));
                 self.past_route.push(waypoint);
             } else {
