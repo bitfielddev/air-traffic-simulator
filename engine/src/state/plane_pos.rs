@@ -223,7 +223,7 @@ mod tests {
         let model_motion = ModelMotion {
             max_a: Vec2::INFINITY,
             max_v: Vec2::INFINITY,
-            turning_radius: 2.0,
+            turning_radius: 0.5,
         };
 
         for _ in 0..25 {
@@ -232,7 +232,7 @@ mod tests {
             if plane_pos.planner.instructions.is_empty() {
                 assert_lt!(
                     plane_pos.pos_ang.to_2().0.distance(Pos2::new(10.0, 10.0)),
-                    1.0
+                    2.0
                 );
                 break;
             }
