@@ -26,6 +26,7 @@ impl<T: Vector> Ray<T> {
         }
     }
     #[must_use]
+    #[expect(clippy::missing_const_for_fn)]
     pub fn head(&self) -> T {
         self.tail + self.vec
     }
