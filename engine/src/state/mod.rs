@@ -3,7 +3,7 @@ use std::sync::Arc;
 use airport::Airport;
 use bytes::Bytes;
 use plane::Plane;
-use rand::{prelude::*, Rng};
+use rand::{prelude::*, rng, Rng};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;
@@ -100,19 +100,19 @@ impl State {
         }
 
         if config.max_planes.is_none_or(|m| self.planes.len() < m)
-            && thread_rng().gen_range(0.0..=1.0) < config.plane_spawn_chance
+            && rng().random_range(0.0..=1.0) < config.plane_spawn_chance
         {
-            let plane = wd.planes.choose(&mut thread_rng()).unwrap();
+            let plane = wd.planes.choose(&mut rng()).unwrap();
             #[expect(clippy::option_if_let_else)]
             let flight = if let Some(flights) = &wd.flights {
-                flights.choose(&mut thread_rng()).unwrap()
+                flights.choose(&mut rng()).unwrap()
             } else {
                 // TODO check whether plane can land in runway
                 &Arc::new(Flight {
                     airline: SmolStr::default(),
                     code: FlightCode::default(),
-                    from: wd.airports.choose(&mut thread_rng()).unwrap().code.clone(),
-                    to: wd.airports.choose(&mut thread_rng()).unwrap().code.clone(),
+                    from: wd.airports.choose(&mut rng()).unwrap().code.clone(),
+                    to: wd.airports.choose(&mut rng()).unwrap().code.clone(),
                     plane: Arc::new([plane.id.clone()]),
                 })
             };
@@ -121,7 +121,7 @@ impl State {
                 .unwrap()
                 .airport
                 .runways
-                .choose(&mut thread_rng())
+                .choose(&mut rng())
                 .unwrap();
             let plane = Plane::new(plane, flight, runway, wd);
             info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");

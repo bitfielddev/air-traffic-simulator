@@ -167,6 +167,7 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
             drop(engine);
             let _ = io
                 .emit("state", &(removed, state))
+                .await
                 .inspect_err(|e| error!(ev = "state", "{e:#}"));
             info!(delta=?start.elapsed());
             tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;

@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use rand::prelude::*;
+use rand::{prelude::*, rng};
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
@@ -40,7 +40,7 @@ impl Airport {
                         PlaneEvent {
                             from: self.id.clone(),
                             payload: PlaneEventPayload::ClearForLanding(Arc::clone(
-                                self.airport.runways.choose(&mut thread_rng()).unwrap(),
+                                self.airport.runways.choose(&mut rng()).unwrap(),
                             )),
                         },
                     ));

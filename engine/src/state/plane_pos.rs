@@ -2,7 +2,7 @@ use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::DubinsPath;
 use glam::Vec2;
-use rand::{thread_rng, Rng};
+use rand::{rng, Rng};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use ts_rs::TS;
@@ -90,10 +90,10 @@ impl FlightPlanner {
             if let Some(waypoint) = self.route.pop_front() {
                 debug!(?waypoint.name, "Planning new instructions");
                 let randomness = Vec2::new(
-                    thread_rng().gen_range(
+                    rng().random_range(
                         -2.0 * model_motion.turning_radius..2.0 * model_motion.turning_radius,
                     ),
-                    thread_rng().gen_range(
+                    rng().random_range(
                         -2.0 * model_motion.turning_radius..2.0 * model_motion.turning_radius,
                     ),
                 );
