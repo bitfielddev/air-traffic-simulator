@@ -10,7 +10,7 @@ bytes = { version = "1.10.1", features = ["serde"] }
 derive_more = { version = "2.0.1", features = ["full"] }
 dubins_paths = { version = "2.7.0", features = ["glam"] }
 duplicate = "2.0.0"
-glam = { version = "0.30.2", features = ["serde"] }
+glam = { version = "0.30.3", features = ["serde"] }
 eyre = "0.6.12"
 itertools = "0.14.0"
 rand = "0.9.1"
