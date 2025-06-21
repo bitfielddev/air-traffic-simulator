@@ -1,10 +1,12 @@
-use std::cmp::Ordering;
+use std::{cmp::Ordering, path::PathBuf};
 
 use glam::Vec2;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-#[derive(Clone, Debug, Serialize, Deserialize, TS)]
+#[derive(
+    Clone, Debug, Serialize, Deserialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct Config {
     pub tick_duration: f32,
@@ -13,6 +15,8 @@ pub struct Config {
     pub cruising_altitude_plus: f32,
     pub cruising_altitude_minus: f32,
     pub ns_before_ew: bool,
+    #[rkyv(with = rkyv::with::Map<rkyv::with::AsString>)]
+    pub save_dir: Option<PathBuf>,
 }
 
 impl Default for Config {
@@ -24,6 +28,7 @@ impl Default for Config {
             cruising_altitude_plus: 1024.0,
             cruising_altitude_minus: 512.0,
             ns_before_ew: false,
+            save_dir: None,
         }
     }
 }

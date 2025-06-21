@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::{HashMap, VecDeque},
-    path::Path,
+    path::{Path, PathBuf},
     sync::Arc,
 };
 
@@ -17,7 +17,17 @@ use crate::util::{
     pos::Pos2Angle, ray::Ray, AirportCode, Class, FlightCode, PlaneModelId, Pos2, Pos3, WaypointId,
 };
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct WorldData {
     #[ts(as = "Arc<[Arc<[String]>]>")]
@@ -52,7 +62,17 @@ impl WorldData {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct AirportData {
     #[ts(as = "String")]
@@ -74,7 +94,17 @@ impl AirportData {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Runway {
     #[ts(as = "String")]
@@ -107,7 +137,17 @@ impl Runway {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Flight {
     #[ts(as = "String")]
@@ -153,7 +193,17 @@ impl Flight {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct PlaneData {
     #[ts(as = "String")]
@@ -165,10 +215,22 @@ pub struct PlaneData {
     #[ts(as = "String")]
     pub class: Class,
     pub motion: ModelMotion,
-    pub icon: Option<Arc<Path>>,
+    #[rkyv(with = rkyv::with::Map<rkyv::with::AsString>)]
+    pub icon: Option<PathBuf>,
 }
 
-#[derive(Clone, Copy, Debug, Default, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct ModelMotion {
     #[ts(as = "(f32, f32)")]
@@ -178,7 +240,17 @@ pub struct ModelMotion {
     pub turning_radius: f32,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Waypoint {
     #[ts(as = "String")]

@@ -23,7 +23,9 @@ use crate::{
     world_data::{Flight, PlaneData, Runway, WorldData},
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct Plane {
     pub id: PlaneStateId,
@@ -219,7 +221,9 @@ impl Plane {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub enum PhaseData {
     Takeoff { runway: Arc<Runway> },
@@ -240,7 +244,9 @@ impl PhaseData {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct PlaneEvent {
     #[ts(as = "String")]
@@ -248,7 +254,9 @@ pub struct PlaneEvent {
     pub payload: PlaneEventPayload,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 #[non_exhaustive]
 pub enum PlaneEventPayload {

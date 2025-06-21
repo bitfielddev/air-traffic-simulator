@@ -5,7 +5,17 @@ use ts_rs::TS;
 
 use crate::util::{angle::Angle, Pos2, Pos3};
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Serialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Pos3Angle(#[ts(as = "(f32, f32, f32)")] pub Pos3, pub Angle);
 
@@ -16,7 +26,17 @@ impl Pos3Angle {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Deserialize,
+    Serialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Pos2Angle(#[ts(as = "(f32, f32)")] pub Pos2, pub Angle);
 

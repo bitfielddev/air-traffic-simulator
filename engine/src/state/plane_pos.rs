@@ -20,7 +20,9 @@ use crate::{
     world_data::{ModelMotion, Waypoint},
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct PlanePos {
     pub pos_ang: Pos3Angle,
@@ -28,7 +30,17 @@ pub struct PlanePos {
     pub planner: FlightPlanner,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Deserialize,
+    Serialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct FlightPlanner {
     #[ts(as = "()")]
@@ -43,9 +55,11 @@ pub struct FlightPlanner {
     pub past_pos: Vec<Pos3>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive,
+)]
 pub enum FlightInstruction {
-    Dubins(#[serde(skip)] DubinsPath), // TODO
+    Dubins(DubinsPath),
     Straight(Ray<Vec2>),
     Turn {
         origin: Pos2Angle,

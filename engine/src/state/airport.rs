@@ -11,7 +11,9 @@ use crate::{
     world_data::AirportData,
 };
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct Airport {
     #[ts(as = "String")]
@@ -51,14 +53,18 @@ impl Airport {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 pub struct AirportEvent {
     pub from: PlaneStateId,
     pub payload: AirportEventPayload,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, TS)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive, TS,
+)]
 #[ts(export)]
 #[non_exhaustive]
 pub enum AirportEventPayload {

@@ -5,7 +5,17 @@ use ts_rs::TS;
 
 use crate::world_data::ModelMotion;
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize, TS)]
+#[derive(
+    Clone,
+    Debug,
+    Default,
+    Deserialize,
+    Serialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Kinematics {
     pub x_target: Vec<Target>,
@@ -14,7 +24,18 @@ pub struct Kinematics {
     pub v: Vec2,
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, TS)]
+#[derive(
+    Clone,
+    Copy,
+    Debug,
+    Default,
+    Deserialize,
+    Serialize,
+    rkyv::Serialize,
+    rkyv::Deserialize,
+    rkyv::Archive,
+    TS,
+)]
 #[ts(export)]
 pub struct Target {
     pub a: f32,

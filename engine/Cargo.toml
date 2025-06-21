@@ -8,13 +8,14 @@ edition = "2021"
 [dependencies]
 bytes = { version = "1.10.1", features = ["serde"] }
 derive_more = { version = "2.0.1", features = ["full"] }
-dubins_paths = { version = "2.7.1", features = ["glam"] }
+dubins_paths = { git = "https://github.com/iiiii7d/dubins_paths", features = ["glam", "serde", "rkyv"] }
 duplicate = "2.0.0"
-glam = { version = "0.30.4", features = ["serde"] }
+glam = { version = "0.30.4", features = ["serde", "rkyv"] }
 eyre = "0.6.12"
 itertools = "0.14.0"
 rand = "0.9.1"
 rayon = "1.10.0"
+rkyv = { version = "0.8.10", features = ["smol_str-0_3", "uuid-1"] }
 serde = { version = "1.0.219", features = ["rc", "derive"] }
 smol_str = { version = "0.3.2", features = ["serde"] }
 tracing = "0.1.41"

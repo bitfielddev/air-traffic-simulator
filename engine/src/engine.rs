@@ -2,7 +2,7 @@ use bytes::Bytes;
 
 use crate::{config::Config, state::State, util::PlaneStateId, world_data::WorldData};
 
-#[derive(Clone)]
+#[derive(Clone, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive)]
 pub struct Engine {
     pub world: WorldData,
     pub config: Config,

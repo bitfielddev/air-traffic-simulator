@@ -19,7 +19,9 @@ pub mod airport;
 pub mod plane;
 pub mod plane_pos;
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(
+    Clone, Debug, Deserialize, Serialize, rkyv::Serialize, rkyv::Deserialize, rkyv::Archive,
+)]
 pub struct State {
     pub planes: Vec<Plane>,
     pub airports: Vec<Airport>,
