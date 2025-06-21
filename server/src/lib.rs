@@ -158,7 +158,9 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
 
     let app = app.layer(layer).layer(CorsLayer::permissive());
 
+    let engine_arc2 = Arc::clone(&engine_arc);
     tokio::spawn(async move {
+        let engine_arc = engine_arc2;
         #[expect(clippy::infinite_loop)]
         loop {
             let start = Instant::now();
@@ -169,8 +171,36 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
                 .emit("state", &(removed, state))
                 .await
                 .inspect_err(|e| error!(ev = "state", "{e:#}"));
-            info!(delta=?start.elapsed());
+
+            info!(delta=?start.elapsed(), "tick");
             tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;
+        }
+    });
+
+    tokio::spawn(async move {
+        loop {
+            if matches!(
+                (async {
+                    let start = Instant::now();
+                    let engine = engine_arc.read().await;
+                    let Some(save_path) = engine.config.save_path.clone() else {
+                        info!("No save path configured");
+                        return Ok(true);
+                    };
+                    let bytes = rkyv::to_bytes::<rkyv::rancor::Error>(&*engine)?;
+                    drop(engine);
+                    async_fs::write(save_path, bytes).await?;
+
+                    info!(delta=?start.elapsed(), "save");
+                    tokio::time::sleep(Duration::from_secs(60) - start.elapsed()).await;
+                    Result::<_>::Ok(false)
+                })
+                .await
+                .inspect_err(|e| error!("{e:#}")),
+                Ok(true)
+            ) {
+                break;
+            }
         }
     });
 

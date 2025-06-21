@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::{HashMap, VecDeque},
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -27,6 +27,7 @@ use crate::util::{
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct WorldData {
@@ -72,6 +73,7 @@ impl WorldData {
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct AirportData {
@@ -104,6 +106,7 @@ impl AirportData {
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct Runway {
@@ -147,6 +150,7 @@ impl Runway {
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct Flight {
@@ -203,6 +207,7 @@ impl Flight {
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct PlaneData {
@@ -230,6 +235,7 @@ pub struct PlaneData {
     rkyv::Deserialize,
     rkyv::Archive,
     TS,
+    PartialEq,
 )]
 #[ts(export)]
 pub struct ModelMotion {
