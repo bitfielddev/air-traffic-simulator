@@ -30,3 +30,5 @@ export function world2map([x, y]) {
 export function world2map3([x, y, z]) {
   return [y, x, z];
 }
+
+export const plane2destColour = undefined;
