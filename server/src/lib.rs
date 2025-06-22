@@ -196,7 +196,7 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
                     Result::<_>::Ok(false)
                 })
                 .await
-                .inspect_err(|e| error!("{e:#}")),
+                .inspect_err(|e| error!(in_ = "save", "{e:#}")),
                 Ok(true)
             ) {
                 break;
