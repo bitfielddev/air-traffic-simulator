@@ -6,10 +6,12 @@ import type { Plane } from "./bindings/Plane";
 import socket from "./socket";
 import { escape } from "./util";
 import { rawMap } from "@/map";
+import { airportCoords, getAirportInfo } from "@/airport.ts";
 
 export interface SelectedPlane {
   id: string;
-  path?: L.MultiOptionsPolyline;
+  path: L.MultiOptionsPolyline;
+  plane2dest: L.Polyline;
 }
 
 export interface PlaneState {
@@ -27,9 +29,14 @@ export function updateSelectPlane(latLng: L.LatLng) {
   selectedPlane.value?.path?.setLatLngs(
     selectedPlane.value?.path?.getLatLngs().concat([latLng]),
   );
+
+  selectedPlane.value?.plane2dest.setLatLngs(
+    selectedPlane.value?.plane2dest?.getLatLngs().with(1, latLng as never),
+  );
 }
 export function deselectPlane() {
   selectedPlane.value?.path?.remove();
+  selectedPlane.value?.plane2dest?.remove();
   selectedPlane.value = undefined;
 }
 
@@ -44,14 +51,9 @@ export async function getPlaneInfo(id: string, force?: boolean) {
 
 export async function selectPlane(id: string, e: L.PopupEvent) {
   deselectPlane();
-  selectedPlane.value = { id };
 
   const plane = await getPlaneInfo(id, true);
-
-  e.popup.setContent(
-    `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
-  );
-  selectedPlane.value.path = markRaw(
+  const path = markRaw(
     L.multiOptionsPolyline(
       plane.pos.planner.past_pos.map((a) => L.latLng(...config.world2map3(a))),
       {
@@ -71,6 +73,28 @@ export async function selectPlane(id: string, e: L.PopupEvent) {
       },
     ).addTo(rawMap()),
   );
+
+  const destLatLng = L.latLng(
+    ...config.world2map(
+      airportCoords((await getAirportInfo(plane.flight.to)).airport),
+    ),
+  );
+  const planeLatLng = L.latLng(...config.world2map3(plane.pos.pos_ang[0]));
+  const plane2dest = markRaw(
+    L.polyline([destLatLng, planeLatLng], {
+      color: "#555",
+      dashArray: "10 10",
+    }).addTo(rawMap()),
+  );
+
+  e.popup.setContent(
+    `${escape(plane.flight.code)}: ${escape(plane.flight.from)} → ${escape(plane.flight.to)}`,
+  );
+  selectedPlane.value = {
+    id,
+    path,
+    plane2dest,
+  };
 }
 
 export function handleStateUpdates() {
