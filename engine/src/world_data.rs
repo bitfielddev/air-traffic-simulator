@@ -151,6 +151,7 @@ impl Runway {
     rkyv::Archive,
     TS,
     PartialEq,
+    Eq,
 )]
 #[ts(export)]
 pub struct Flight {
