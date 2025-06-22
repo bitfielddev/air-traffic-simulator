@@ -82,7 +82,7 @@ export async function selectPlane(id: string, e: L.PopupEvent) {
   const planeLatLng = L.latLng(...config.world2map3(plane.pos.pos_ang[0]));
   const plane2dest = markRaw(
     L.polyline([destLatLng, planeLatLng], {
-      color: "#555",
+      color: config.plane2destColour ?? "#aaa",
       dashArray: "10 10",
     }).addTo(rawMap()),
   );

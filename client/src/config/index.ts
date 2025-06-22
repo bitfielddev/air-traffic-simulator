@@ -7,6 +7,7 @@ interface ClientConfig {
   socketUri?: string;
   world2map: (a: [number, number]) => [number, number];
   world2map3: (a: [number, number, number]) => [number, number, number];
+  plane2destColour?: string;
 }
 
 const config: ClientConfig = configImport;
