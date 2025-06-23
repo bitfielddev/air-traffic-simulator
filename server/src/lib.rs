@@ -173,7 +173,7 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
                 .inspect_err(|e| error!(ev = "state", "{e:#}"));
 
             info!(delta=?start.elapsed(), "tick");
-            tokio::time::sleep(Duration::from_secs(1) - start.elapsed()).await;
+            tokio::time::sleep(Duration::from_secs(1).saturating_sub(start.elapsed())).await;
         }
     });
 
@@ -192,7 +192,8 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
                     async_fs::write(save_path, bytes).await?;
 
                     info!(delta=?start.elapsed(), "save");
-                    tokio::time::sleep(Duration::from_secs(60) - start.elapsed()).await;
+                    tokio::time::sleep(Duration::from_secs(60).saturating_sub(start.elapsed()))
+                        .await;
                     Result::<_>::Ok(false)
                 })
                 .await
