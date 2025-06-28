@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 bytes = { version = "1.10.1", features = ["serde"] }
 derive_more = { version = "2.0.1", features = ["full"] }
-dubins_paths = { git = "https://github.com/iiiii7d/dubins_paths", features = ["glam", "serde", "rkyv"] }
+dubins_paths = { git = "https://github.com/iiiii7d/dubins_paths", features = ["glam", "serde", "rkyv", "bytecheck"] }
 duplicate = "2.0.0"
 glam = { version = "0.30.4", features = ["serde", "rkyv", 'bytecheck'] }
 eyre = "0.6.12"
@@ -23,7 +23,7 @@ ts-rs = { version = "11.0.1", features = ["uuid-impl"] }
 uuid = { version = "1.17.0", features = ["v4", "serde"] }
 
 [dev-dependencies]
-assertables = "9.7.1"
+assertables = "9.8.0"
 
 [lints]
 workspace = true
