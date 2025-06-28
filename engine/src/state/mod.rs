@@ -65,8 +65,8 @@ impl State {
     ) -> impl Iterator<Item = &'a Plane> + 'a {
         self.planes.iter().filter(|a| a.flight.to == *code)
     }
-    #[tracing::instrument(skip_all)]
-    pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Bytes) {
+
+    fn tick_planes(&mut self, config: &Config) -> Vec<PlaneStateId> {
         let mut remove_list = vec![];
         for (id, (remove, send)) in self
             .planes
@@ -86,7 +86,9 @@ impl State {
             }
         }
         self.planes.retain(|plane| !remove_list.contains(&plane.id));
-
+        remove_list
+    }
+    fn tick_airports(&mut self, config: &Config) {
         for send in self
             .airports
             .par_iter_mut()
@@ -100,35 +102,46 @@ impl State {
                 }
             }
         }
-
-        if config.max_planes.is_none_or(|m| self.planes.len() < m)
-            && rng().random_range(0.0..=1.0) < config.plane_spawn_chance
+    }
+    fn tick_spawn_planes(&mut self, config: &Config, wd: &WorldData) {
+        if config.max_planes.is_some_and(|m| self.planes.len() >= m)
+            || rng().random_range(0.0..=1.0) > config.plane_spawn_chance
         {
-            let plane = wd.planes.choose(&mut rng()).unwrap();
-            #[expect(clippy::option_if_let_else)]
-            let flight = if let Some(flights) = &wd.flights {
-                flights.choose(&mut rng()).unwrap()
-            } else {
-                // TODO check whether plane can land in runway
-                &Arc::new(Flight {
-                    airline: SmolStr::default(),
-                    code: FlightCode::default(),
-                    from: wd.airports.choose(&mut rng()).unwrap().code.clone(),
-                    to: wd.airports.choose(&mut rng()).unwrap().code.clone(),
-                    plane: Arc::new([plane.id.clone()]),
-                })
-            };
-            let runway = self
-                .airport(&flight.from)
-                .unwrap()
-                .airport
-                .runways
-                .choose(&mut rng())
-                .unwrap();
-            let plane = Plane::new(plane, flight, runway, wd);
-            info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");
-            self.planes.push(plane);
+            return;
         }
+
+        let plane = wd.planes.choose(&mut rng()).unwrap();
+        #[expect(clippy::option_if_let_else)]
+        let flight = if let Some(flights) = &wd.flights {
+            flights.choose(&mut rng()).unwrap()
+        } else {
+            // TODO check whether plane can land in runway
+            &Arc::new(Flight {
+                airline: SmolStr::default(),
+                code: FlightCode::default(),
+                from: wd.airports.choose(&mut rng()).unwrap().code.clone(),
+                to: wd.airports.choose(&mut rng()).unwrap().code.clone(),
+                plane: Arc::new([plane.id.clone()]),
+            })
+        };
+        let runway = self
+            .airport(&flight.from)
+            .unwrap()
+            .airport
+            .runways
+            .choose(&mut rng())
+            .unwrap();
+        let plane = Plane::new(plane, flight, runway, wd);
+        info!(%plane.id, %plane.model.id, %plane.flight.code, %plane.flight.from, %plane.flight.to, "Creating plane");
+        self.planes.push(plane);
+    }
+
+    #[tracing::instrument(skip_all)]
+    pub fn tick(&mut self, config: &Config, wd: &WorldData) -> (Vec<PlaneStateId>, Bytes) {
+        let remove_list = self.tick_planes(config);
+        self.tick_airports(config);
+        self.tick_spawn_planes(config, wd);
+
         (remove_list, self.coord_state())
     }
     #[must_use]

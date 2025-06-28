@@ -38,6 +38,16 @@ pub struct Plane {
     pub start_time: u64,
 }
 
+struct PlaneEventsResult {
+    landing_runway: Option<Arc<Runway>>,
+}
+
+enum PlanePhaseResult {
+    NoChange,
+    Remove,
+    NewPhase(PhaseData),
+}
+
 impl Plane {
     #[must_use]
     pub fn new(
@@ -84,11 +94,7 @@ impl Plane {
         );
         s
     }
-    #[tracing::instrument(skip_all, fields(%self.id, %self.model.id, %self.flight.code, %self.flight.from, %self.flight.to))]
-    pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
-        let mut remove = false;
-        let mut send = vec![];
-
+    fn handle_events(&mut self) -> PlaneEventsResult {
         let mut landing_runway = None;
         for event in self.events.drain(..) {
             match event.payload {
@@ -98,123 +104,149 @@ impl Plane {
             }
         }
 
-        if let Some(new_phase) = match &mut self.phase {
-            PhaseData::Takeoff { runway } => {
-                let plane_pos = self.pos.pos_ang.0.xy();
-                let runway_progress =
-                    plane_pos.distance(runway.start) / runway.end.distance(runway.start);
-                (runway_progress >= 0.75).then(|| {
-                    let cruising_altitude = self
-                        .pos
-                        .planner
-                        .past_route
-                        .last()
-                        .or_else(|| self.pos.planner.route.front())
-                        .map(|a| a.pos)
-                        .map_or_else(
-                            || config.min_cruising_altitude(),
-                            |a| config.cruising_altitude(plane_pos, a),
-                        );
-                    self.pos.kinematics.target_y(
-                        Some(0.0),
-                        Some(cruising_altitude - self.pos.pos_ang.0.z),
-                        None,
-                        None,
-                        self.model.motion,
-                    );
-                    PhaseData::Cruise
-                })
-            }
-            PhaseData::Cruise => (self.pos.planner.route.is_empty()
-                && self.pos.planner.instructions.is_empty())
-            .then(|| {
-                send.push((
-                    self.flight.to.clone(),
-                    AirportEvent {
-                        from: self.id,
-                        payload: AirportEventPayload::RequestRunway,
-                    },
-                ));
-                self.pos.kinematics.target_x(
-                    Some(self.model.motion.max_v.x * 0.75),
-                    None,
-                    None,
-                    None,
-                    self.model.motion,
-                );
-                PhaseData::Descent
-            }),
-            PhaseData::Descent => landing_runway.map(|landing_runway| {
-                let landing_ray = Ray {
-                    tail: landing_runway.start - landing_runway.ray().vec,
-                    vec: landing_runway.ray().vec * 2.0,
-                };
-                let dubins = FlightInstruction::Dubins(
-                    DubinsPath::shortest_from(
-                        self.pos.pos_ang.to_2().into(),
-                        Pos2Angle(
-                            landing_ray.tail,
-                            Angle((landing_runway.end - landing_runway.start).to_angle()),
-                        )
-                        .into(),
-                        self.model.motion.turning_radius,
-                    )
-                    .unwrap(),
-                );
-                let straight = FlightInstruction::Straight(landing_ray);
-                let touchdown_length = landing_runway.len() * 0.75;
-                self.pos.planner.instructions.extend([dubins, straight]);
+        PlaneEventsResult { landing_runway }
+    }
+    fn handle_takeoff_phase(&mut self, config: &Config, runway: &Arc<Runway>) -> PlanePhaseResult {
+        let plane_pos = self.pos.pos_ang.0.xy();
+        let runway_progress = plane_pos.distance(runway.start) / runway.end.distance(runway.start);
 
-                let ds = self
-                    .pos
-                    .planner
-                    .instructions
-                    .iter()
-                    .map(FlightInstruction::length)
-                    .sum::<f32>()
-                    - touchdown_length;
-                let dt = Target::sum_t(
-                    self.pos
-                        .kinematics
-                        .target_x(
-                            Some(self.model.motion.max_v.x * 0.75),
-                            Some(ds),
-                            None,
-                            None,
-                            self.model.motion,
-                        )
-                        .iter(),
-                );
-                self.pos.kinematics.target_y(
-                    Some(0.0),
-                    Some(landing_runway.altitude - self.pos.pos_ang.0.z),
-                    Some(dt),
+        if runway_progress < 0.75 {
+            return PlanePhaseResult::NoChange;
+        }
+
+        let cruising_altitude = self
+            .pos
+            .planner
+            .past_route
+            .last()
+            .or_else(|| self.pos.planner.route.front())
+            .map(|a| a.pos)
+            .map_or_else(
+                || config.min_cruising_altitude(),
+                |a| config.cruising_altitude(plane_pos, a),
+            );
+        self.pos.kinematics.target_y(
+            Some(0.0),
+            Some(cruising_altitude - self.pos.pos_ang.0.z),
+            None,
+            None,
+            self.model.motion,
+        );
+        PlanePhaseResult::NewPhase(PhaseData::Cruise)
+    }
+    fn handle_cruise_phase(
+        &mut self,
+        send: &mut Vec<(AirportStateId, AirportEvent)>,
+    ) -> PlanePhaseResult {
+        if !self.pos.planner.route.is_empty() || !self.pos.planner.instructions.is_empty() {
+            return PlanePhaseResult::NoChange;
+        }
+        send.push((
+            self.flight.to.clone(),
+            AirportEvent {
+                from: self.id,
+                payload: AirportEventPayload::RequestRunway,
+            },
+        ));
+        self.pos.kinematics.target_x(
+            Some(self.model.motion.max_v.x * 0.75),
+            None,
+            None,
+            None,
+            self.model.motion,
+        );
+        PlanePhaseResult::NewPhase(PhaseData::Descent)
+    }
+    fn handle_descent_phase(&mut self, ev_result: &PlaneEventsResult) -> PlanePhaseResult {
+        let Some(landing_runway) = &ev_result.landing_runway else {
+            return PlanePhaseResult::NoChange;
+        };
+        let landing_ray = Ray {
+            tail: landing_runway.start - landing_runway.ray().vec,
+            vec: landing_runway.ray().vec * 2.0,
+        };
+        let dubins = FlightInstruction::Dubins(
+            DubinsPath::shortest_from(
+                self.pos.pos_ang.to_2().into(),
+                Pos2Angle(
+                    landing_ray.tail,
+                    Angle((landing_runway.end - landing_runway.start).to_angle()),
+                )
+                .into(),
+                self.model.motion.turning_radius,
+            )
+            .unwrap(),
+        );
+        let straight = FlightInstruction::Straight(landing_ray);
+        let touchdown_length = landing_runway.len() * 0.75;
+        self.pos.planner.instructions.extend([dubins, straight]);
+
+        let ds = self
+            .pos
+            .planner
+            .instructions
+            .iter()
+            .map(FlightInstruction::length)
+            .sum::<f32>()
+            - touchdown_length;
+        let dt = Target::sum_t(
+            self.pos
+                .kinematics
+                .target_x(
+                    Some(self.model.motion.max_v.x * 0.75),
+                    Some(ds),
+                    None,
                     None,
                     self.model.motion,
-                );
-                self.pos.kinematics.x_target.push(Target {
-                    a: (self.model.motion.max_v.x * 0.75)
-                        .mul_add(-(self.model.motion.max_v.x * 0.75), 1.0)
-                        / touchdown_length
-                        / 2.0,
-                    dt: 2.0 * touchdown_length / self.model.motion.max_v.x.mul_add(0.75, 1.0),
-                }); // TODO
-                PhaseData::Landing {
-                    runway: landing_runway,
-                }
-            }),
-            PhaseData::Landing { runway: _runway } => {
-                if self.pos.planner.instructions.is_empty()
-                    || self.pos.kinematics.v.x < self.model.motion.max_v.x / 10.0
-                {
-                    remove = true;
-                }
-                None
-            }
-        } {
-            info!(phase=?new_phase.str(), "Changing phase");
-            self.phase = new_phase;
+                )
+                .iter(),
+        );
+        self.pos.kinematics.target_y(
+            Some(0.0),
+            Some(landing_runway.altitude - self.pos.pos_ang.0.z),
+            Some(dt),
+            None,
+            self.model.motion,
+        );
+        self.pos.kinematics.x_target.push(Target {
+            a: (self.model.motion.max_v.x * 0.75).mul_add(-(self.model.motion.max_v.x * 0.75), 1.0)
+                / touchdown_length
+                / 2.0,
+            dt: 2.0 * touchdown_length / self.model.motion.max_v.x.mul_add(0.75, 1.0),
+        }); // TODO
+        PlanePhaseResult::NewPhase(PhaseData::Landing {
+            runway: Arc::clone(landing_runway),
+        })
+    }
+    fn handle_landing_phase(&self) -> PlanePhaseResult {
+        if self.pos.planner.instructions.is_empty()
+            || self.pos.kinematics.v.x < self.model.motion.max_v.x / 10.0
+        {
+            return PlanePhaseResult::Remove;
         }
+        PlanePhaseResult::NoChange
+    }
+    #[tracing::instrument(skip_all, fields(%self.id, %self.model.id, %self.flight.code, %self.flight.from, %self.flight.to))]
+    pub fn tick(&mut self, config: &Config) -> (bool, Vec<(AirportStateId, AirportEvent)>) {
+        let mut send = vec![];
+        let ev_result = self.handle_events();
+
+        let phase_handle_result = match self.phase.clone() {
+            PhaseData::Takeoff { runway } => self.handle_takeoff_phase(config, &runway),
+            PhaseData::Cruise => self.handle_cruise_phase(&mut send),
+            PhaseData::Descent => self.handle_descent_phase(&ev_result),
+            PhaseData::Landing { runway: _runway } => self.handle_landing_phase(),
+        };
+        let remove = match phase_handle_result {
+            PlanePhaseResult::NewPhase(new_phase) => {
+                info!(phase=?new_phase.str(), "Changing phase");
+                self.phase = new_phase;
+                false
+            }
+            PlanePhaseResult::Remove => true,
+            PlanePhaseResult::NoChange => false,
+        };
+
         self.pos
             .tick(config.tick_duration, self.model.motion, config);
         (remove, send)
