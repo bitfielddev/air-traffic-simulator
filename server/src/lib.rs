@@ -68,8 +68,7 @@ fn build_client(client_config: Option<&str>) -> Result<tempfile::TempDir> {
     Ok(dir2)
 }
 
-#[expect(clippy::needless_pass_by_value)]
-fn websocket_connect(socket: SocketRef) {
+async fn websocket_connect(socket: SocketRef) {
     info!("Socket.IO connected: {:?} {:?}", socket.ns(), socket.id);
 
     socket.on(
@@ -161,7 +160,6 @@ pub async fn run_server(engine: Engine, client_config: Option<&str>) -> Result<(
     let engine_arc2 = Arc::clone(&engine_arc);
     tokio::spawn(async move {
         let engine_arc = engine_arc2;
-        #[expect(clippy::infinite_loop)]
         loop {
             let start = Instant::now();
             let mut engine = engine_arc.write().await;

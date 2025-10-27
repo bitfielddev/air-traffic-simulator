@@ -354,10 +354,10 @@ mod tests {
         };
         let mut k = Kinematics::default();
         k.target_x(Some(30.0), None, None, None, model_motion);
-        let mut pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
+        let mut _pos_ang = Pos3Angle(Pos3::ZERO, Angle(0.0));
 
         for _ in 0..100 {
-            pos_ang.0.x += k.tick(1.0, model_motion).x;
+            _pos_ang.0.x += k.tick(1.0, model_motion).x;
             // eprintln!("{:?} {:?}", pos_ang.0.x, k.v.x);
             if k.x_target.is_empty() {
                 break;
