@@ -34,7 +34,7 @@
     "@types/node": "24.0.3",
     "@types/uuid": "10.0.0",
     "@vitejs/plugin-vue": "5.2.4",
-    "@vue/tsconfig": "0.7.0",
+    "@vue/tsconfig": "0.8.1",
     "eslint": "9.29.0",
     "eslint-config-prettier": "10.1.5",
     "eslint-plugin-vue": "10.2.0",
