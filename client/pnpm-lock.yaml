@@ -30,7 +30,7 @@ importers:
         specifier: 2.4.0
         version: 2.4.0
       socket.io-client:
-        specifier: ^4.8.1
+        specifier: 4.8.1
         version: 4.8.1
       uuid:
         specifier: 13.0.0
