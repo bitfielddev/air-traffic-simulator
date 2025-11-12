@@ -61,8 +61,8 @@ export async function selectPlane(id: string, e: L.PopupEvent) {
           optionIdxFn: (latLng) => {
             const altThresholds = config.altitudeColours.map((a) => a[0]);
 
-            for (let i = 0; i < altThresholds.length; ++i) {
-              if (latLng.alt <= altThresholds[i]) {
+            for (const [i, altThreshold] of altThresholds.entries()) {
+              if (latLng.alt <= altThreshold) {
                 return i;
               }
             }

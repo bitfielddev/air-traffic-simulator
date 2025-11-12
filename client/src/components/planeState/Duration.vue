@@ -29,8 +29,8 @@ const totalDuration = computed(() => {
 
   let distance = 0;
   for (let i = 0; i < waypoints.length - 1; i++) {
-    let [x1, y1] = waypoints[i];
-    let [x2, y2] = waypoints[i + 1];
+    let [x1, y1] = waypoints[i]!;
+    let [x2, y2] = waypoints[i + 1]!;
     distance += Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
   }
 
