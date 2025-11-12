@@ -18,8 +18,8 @@ importers:
         specifier: 7.1.0
         version: 7.1.0
       '@fortawesome/vue-fontawesome':
-        specifier: 3.0.8
-        version: 3.0.8(@fortawesome/fontawesome-svg-core@7.1.0)(vue@3.5.24(typescript@5.9.3))
+        specifier: 3.1.2
+        version: 3.1.2(@fortawesome/fontawesome-svg-core@7.1.0)(vue@3.5.24(typescript@5.9.3))
       Leaflet.MultiOptionsPolyline:
         specifier: 1.0.0
         version: 1.0.0(leaflet@1.9.4)
@@ -456,10 +456,10 @@ packages:
     resolution: {integrity: sha512-Udu3K7SzAo9N013qt7qmm22/wo2hADdheXtBfxFTecp+ogsc0caQNRKEb7pkvvagUGOpG9wJC1ViH6WXs8oXIA==}
     engines: {node: '>=6'}
 
-  '@fortawesome/vue-fontawesome@3.0.8':
-    resolution: {integrity: sha512-yyHHAj4G8pQIDfaIsMvQpwKMboIZtcHTUvPqXjOHyldh1O1vZfH4W03VDPv5RvI9P6DLTzJQlmVgj9wCf7c2Fw==}
+  '@fortawesome/vue-fontawesome@3.1.2':
+    resolution: {integrity: sha512-mhYnBIuuW8OIMHf31kOjaBmyE7BMrwBorhrOHVud6vTTu+7IPQNWB+DWaHoE75v10dRF5s/dFtcrgE7vKSEWwQ==}
     peerDependencies:
-      '@fortawesome/fontawesome-svg-core': ~1 || ~6
+      '@fortawesome/fontawesome-svg-core': ~1 || ~6 || ~7
       vue: '>= 3.0.0 < 4'
 
   '@humanfs/core@0.19.1':
@@ -2004,7 +2004,7 @@ snapshots:
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.1.0
 
-  '@fortawesome/vue-fontawesome@3.0.8(@fortawesome/fontawesome-svg-core@7.1.0)(vue@3.5.24(typescript@5.9.3))':
+  '@fortawesome/vue-fontawesome@3.1.2(@fortawesome/fontawesome-svg-core@7.1.0)(vue@3.5.24(typescript@5.9.3))':
     dependencies:
       '@fortawesome/fontawesome-svg-core': 7.1.0
       vue: 3.5.24(typescript@5.9.3)
