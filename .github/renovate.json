@@ -1,12 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:best-practices",
-    ":pinOnlyDevDependencies",
-    "helpers:pinGitHubActionDigestsToSemver",
-    ":disableDependencyDashboard",
-    "mergeConfidence:all-badges",
-    ":prHourlyLimitNone"
+    "github>iiiii7d/renovate-config:no-dev",
+    ":pinOnlyDevDependencies"
   ],
   "packageRules": [
     {
