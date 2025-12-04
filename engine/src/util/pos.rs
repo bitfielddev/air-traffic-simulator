@@ -1,4 +1,4 @@
-use dubins_paths::PosRot;
+use dubins_paths::f32::PosRot;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;

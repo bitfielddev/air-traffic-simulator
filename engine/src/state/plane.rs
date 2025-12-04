@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc, time::SystemTime};
 
-use dubins_paths::DubinsPath;
+use dubins_paths::f32::DubinsPath;
 use glam::Vec3Swizzles;
 use serde::{Deserialize, Serialize};
 use tracing::info;

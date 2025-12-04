@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::Arc};
 
-use dubins_paths::DubinsPath;
+use dubins_paths::f32::DubinsPath;
 use glam::Vec2;
 use rand::{rng, Rng};
 use serde::{Deserialize, Serialize};
