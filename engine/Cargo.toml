@@ -19,7 +19,7 @@ rkyv = { version = "0.8.12", features = ["smol_str-0_3", "uuid-1"] }
 serde = { version = "1.0.228", features = ["rc", "derive"] }
 smol_str = { version = "0.3.4", features = ["serde"] }
 tracing = "0.1.41"
-ts-rs = { version = "11.1.0", features = ["uuid-impl"] }
+ts-rs = { version = "12.0.0", features = ["uuid-impl"] }
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
 
 [dev-dependencies]
