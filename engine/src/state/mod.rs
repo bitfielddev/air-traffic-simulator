@@ -3,7 +3,7 @@ use std::sync::Arc;
 use airport::Airport;
 use bytes::Bytes;
 use plane::Plane;
-use rand::{prelude::*, rng, Rng};
+use rand::{prelude::*, rng, RngExt};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use smol_str::SmolStr;

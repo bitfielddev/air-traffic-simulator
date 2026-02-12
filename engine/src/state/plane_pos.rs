@@ -2,7 +2,7 @@ use std::{collections::VecDeque, sync::Arc};
 
 use dubins_paths::f32::DubinsPath;
 use glam::Vec2;
-use rand::{rng, Rng};
+use rand::{rng, RngExt};
 use serde::{Deserialize, Serialize};
 use tracing::{debug, trace};
 use ts_rs::TS;
