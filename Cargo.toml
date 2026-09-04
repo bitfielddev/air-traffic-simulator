@@ -18,7 +18,7 @@ client = ["server/client"]
 members = ["engine", "server", "example"]
 
 [workspace.lints.rust]
-future-incompatible = "deny"
+future_incompatible = "deny"
 
 [workspace.lints.clippy]
 all = "warn"
